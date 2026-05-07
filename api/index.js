@@ -22,29 +22,29 @@ const allowedOrigins = [
 ];
 
 const corsOptions = {
-  origin: (origin, callback) => {
-    if (!origin) {
-      return callback(null, true);
-    }
-
-    const allowed = allowedOrigins.some((pattern) => {
-      if (typeof pattern === "string") return origin === pattern;
-      return pattern.test(origin);
-    });
-
-    if (allowed) {
-      callback(null, origin);
-    } else {
-      console.warn(`CORS bloqueado: ${origin}`);
-      callback(null, false);
-    }
-  },
+  origin: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
 };
 
 app.use(cors(corsOptions));
+
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin) {
+    res.header("Access-Control-Allow-Origin", origin);
+    res.header("Access-Control-Allow-Credentials", "true");
+    res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+    res.header("Access-Control-Allow-Headers", "Content-Type,Authorization");
+  }
+
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(204);
+  }
+
+  next();
+});
 
 // 🔹 MIDDLEWARES
 app.use(express.json({ limit: "50mb" }));
