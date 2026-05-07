@@ -3,7 +3,7 @@
   "buildCommand": "cd formacero_rrhh_1.1 && npm install && npm run build",
   "outputDirectory": "formacero_rrhh_1.1/dist",
   "public": false,
-  "installCommand": "npm install && cd backend && npm install && cd ../formacero_rrhh_1.1 && npm install",
+  "installCommand": "npm install && cd backend && npm install && cd ../formacero_rrhh_1.1 && npm install --include=dev",
   "functions": {
     "api/**/*.js": {
       "memory": 1024,
