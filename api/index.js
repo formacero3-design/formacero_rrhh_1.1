@@ -36,7 +36,7 @@ const corsOptions = {
       callback(null, origin);
     } else {
       console.warn(`CORS bloqueado: ${origin}`);
-      callback(null, true); // Permitir pero loguear
+      callback(null, false);
     }
   },
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
