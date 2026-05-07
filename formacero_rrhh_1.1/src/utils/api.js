@@ -1,6 +1,21 @@
+const normalizeUrl = (url) => {
+  if (!url) return url;
+
+  let normalized = url.trim();
+  if (normalized.endsWith("/")) {
+    normalized = normalized.slice(0, -1);
+  }
+
+  if (!normalized.endsWith("/api")) {
+    normalized = `${normalized}/api`;
+  }
+
+  return normalized;
+};
+
 const buildApiUrl = () => {
   if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL;
+    return normalizeUrl(import.meta.env.VITE_API_URL);
   }
 
   if (typeof window === "undefined") {
