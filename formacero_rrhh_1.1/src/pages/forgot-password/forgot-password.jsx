@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { API } from "../../utils/api";
+import { getApiEndpoint } from "../../utils/api";
 import "./forgot-password.css";
 
 function ForgotPassword() {
@@ -13,7 +13,7 @@ function ForgotPassword() {
     setMessage("");
 
     try {
-      const res = await fetch(`${API}/auth/forgot-password`, {
+      const res = await fetch(getApiEndpoint("/auth/forgot-password"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ correo }),

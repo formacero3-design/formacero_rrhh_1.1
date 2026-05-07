@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react"; 
 import { Link, useNavigate } from "react-router-dom";
-import { API, fetchWithAuth } from "../../utils/api";
+import { getApiEndpoint, fetchWithAuth } from "../../utils/api";
 import "../../layout.css";
 import "./dashboard.css";
 
@@ -58,7 +58,7 @@ function Dashboard() {
 
     try {
       const query = encodeURIComponent(trimmedValue);
-      const res = await fetch(`${API}/empleados/search?q=${query}`, {
+      const res = await fetch(getApiEndpoint(`/empleados/search?q=${query}`), {
         headers: {
           "Authorization": `Bearer ${token}`
         }
@@ -164,7 +164,7 @@ function Dashboard() {
 
     const getTotal = async () => {
       try {
-        const res = await fetch(`${API}/empleados/count`, {
+        const res = await fetch(getApiEndpoint("/empleados/count"), {
           headers: {
             "Authorization": `Bearer ${token}`
           }
@@ -187,7 +187,7 @@ function Dashboard() {
 
     const getCumpleaneros = async () => {
       try {
-        const res = await fetch(`${API}/empleados/cumpleaneros`, {
+        const res = await fetch(getApiEndpoint("/empleados/cumpleaneros"), {
           headers: {
             "Authorization": `Bearer ${token}`
           }

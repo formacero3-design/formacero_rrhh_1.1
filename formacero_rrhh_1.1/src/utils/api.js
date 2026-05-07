@@ -27,6 +27,11 @@ const buildApiUrl = () => {
 
 export const API = buildApiUrl();
 
+export const getApiEndpoint = (endpoint) => {
+  const normalizedEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+  return `${API}${normalizedEndpoint}`;
+};
+
 export const getAuthHeaders = (customHeaders = {}, omitContentType = false) => {
   const token = localStorage.getItem("token");
   const headers = {
@@ -46,7 +51,7 @@ export const getAuthHeaders = (customHeaders = {}, omitContentType = false) => {
 
 export const fetchWithAuth = async (endpoint, options = {}) => {
   const omitContentType = options.body instanceof FormData;
-  return fetch(`${API}${endpoint}`, {
+  return fetch(getApiEndpoint(endpoint), {
     ...options,
     headers: {
       ...getAuthHeaders(options.headers, omitContentType)

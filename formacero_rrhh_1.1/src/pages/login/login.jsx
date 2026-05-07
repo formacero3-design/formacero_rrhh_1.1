@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { API } from "../../utils/api";
+import { getApiEndpoint } from "../../utils/api";
 import "./login.css";
 
 function Login() {
@@ -34,7 +34,7 @@ function Login() {
 
     try {
 
-      const res = await fetch(`${API}/auth/login`, {
+      const res = await fetch(getApiEndpoint("/auth/login"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
