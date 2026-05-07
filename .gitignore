@@ -1,0 +1,73 @@
+# .gitignore Formacero RRHH
+
+# Dependencias
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Variables de entorno (SENSIBLES)
+.env
+.env.local
+.env.*.local
+.env.production.local
+
+# Archivos de logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Archivos de sistema
+.DS_Store
+.AppleDouble
+.LSOverride
+*.swp
+*.swo
+*~
+.vscode/settings.json
+.vscode/launch.json
+.idea/
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# Cache
+.eslintcache
+.cache/
+.pnp.js
+
+# Pruebas
+coverage/
+.nyc_output/
+
+# IDE
+.vscode
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS
+Thumbs.db
+Desktop.ini
+
+# Uploads (archivos de usuario temporales)
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Archivos temporales
+*.tmp
+*.bak
+*.orig
+
+# Datos sensibles
+credentials.json
+secrets.json
+config.local.js

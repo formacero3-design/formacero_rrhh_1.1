@@ -1,17 +1,12 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import path from "path";
-import { fileURLToPath } from "url";
 
 dotenv.config();
 
-import empleadosRoutes from "./routes/empleados.routes.js";
-import authRoutes from "./routes/auth.routes.js";
-import reportesRoutes from "./routes/reportes.routes.js";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import empleadosRoutes from "../backend/routes/empleados.routes.js";
+import authRoutes from "../backend/routes/auth.routes.js";
+import reportesRoutes from "../backend/routes/reportes.routes.js";
 
 const app = express();
 
@@ -24,7 +19,7 @@ const allowedOrigins = [
   /\.vercel\.app$/,
   /formacero/i,
   process.env.FRONTEND_URL,
-].filter(Boolean);
+];
 
 const corsOptions = {
   origin: (origin, callback) => {
@@ -55,10 +50,6 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
-// 🔹 SERVIR ARCHIVOS ESTÁTICOS (uploads)
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use('/api/uploads', express.static(path.join(__dirname, 'uploads')));
-
 // 🔹 LOG (DEBUG)
 app.use((req, res, next) => {
   console.log(`📡 ${req.method} ${req.url}`);
@@ -87,7 +78,7 @@ app.use("/api/reportes", reportesRoutes);
 // 🔴 404
 app.use((req, res) => {
   res.status(404).json({
-    message: "Ruta no encontrada"
+    message: "Ruta no encontrada",
   });
 });
 
@@ -97,7 +88,7 @@ app.use((err, req, res, next) => {
 
   if (err.message?.includes("CORS")) {
     return res.status(403).json({
-      message: "Acceso bloqueado por CORS"
+      message: "Acceso bloqueado por CORS",
     });
   }
 
@@ -107,12 +98,4 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 🚀 SERVER - exportar app y ejecutar localmente
 export default app;
-
-if (import.meta.url === `file://${process.argv[1]}`) {
-  const PORT = process.env.PORT || 3001;
-  app.listen(PORT, () => {
-    console.log(`🚀 Backend corriendo en http://localhost:${PORT}`);
-  });
-}

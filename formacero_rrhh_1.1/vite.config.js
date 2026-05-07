@@ -12,5 +12,17 @@ export default defineConfig({
         secure: false,
       }
     }
+  },
+  build: {
+    outDir: 'dist',
+    minify: 'terser',
+    sourcemap: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom']
+        }
+      }
+    }
   }
 })
