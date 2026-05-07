@@ -4,18 +4,6 @@
   "outputDirectory": "formacero_rrhh_1.1/dist",
   "public": false,
   "installCommand": "npm install && cd backend && npm install && cd ../formacero_rrhh_1.1 && npm install",
-  "env": {
-    "SUPABASE_URL": "@supabase_url",
-    "SUPABASE_ANON_KEY": "@supabase_anon_key",
-    "SUPABASE_SERVICE_ROLE_KEY": "@supabase_service_role_key",
-    "JWT_SECRET": "@jwt_secret",
-    "EMAIL_USER": "@email_user",
-    "EMAIL_PASS": "@email_pass",
-    "EMAIL_FROM": "@email_from",
-    "EMAIL_HOST": "@email_host",
-    "EMAIL_PORT": "@email_port",
-    "FRONTEND_URL": "@frontend_url"
-  },
   "functions": {
     "api/**/*.js": {
       "memory": 1024,
