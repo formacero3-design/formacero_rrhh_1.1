@@ -28,6 +28,8 @@ function EmpleadoDetalle() {
   const [profilePhoto, setProfilePhoto] = useState(null);
   const [documentos, setDocumentos] = useState([]);
   const [nuevoDocumento, setNuevoDocumento] = useState(null);
+  const [documentName, setDocumentName] = useState("");
+  const [editingDocument, setEditingDocument] = useState(null);
   const [cargandoDocumento, setCargandoDocumento] = useState(false);
   const [showDocumentoForm, setShowDocumentoForm] = useState(false);
 
@@ -48,6 +50,7 @@ function EmpleadoDetalle() {
   const allowedUserRoles = ["user", "empleado", "usuario"];
   const isUserRole = allowedUserRoles.includes(currentUser?.rol);
   const canViewAssignedReports = isUserRole && String(id) === String(currentEmployeeId);
+  const canEditDocuments = currentUser?.rol === "admin" || canViewAssignedReports;
 
   // ✅ TOKEN
   const token = localStorage.getItem("token");
@@ -222,11 +225,61 @@ function EmpleadoDetalle() {
     const file = e.target.files[0];
     if (file) {
       setNuevoDocumento(file);
+      if (!documentName) {
+        setDocumentName(file.name);
+      }
+    }
+  };
+
+  const resetDocumentoForm = () => {
+    setNuevoDocumento(null);
+    setDocumentName("");
+    setEditingDocument(null);
+    setShowDocumentoForm(false);
+  };
+
+  const startEditDocumento = (doc) => {
+    setEditingDocument(doc);
+    setDocumentName(doc.nombre_original || "");
+    setNuevoDocumento(null);
+    setShowDocumentoForm(true);
+  };
+
+  const deleteDocumento = async (doc) => {
+    if (!confirm(`¿Eliminar documento "${doc.nombre_original}"?`)) {
+      return;
+    }
+
+    const documentoId = doc.id ?? doc.documento_id ?? doc.documentoId;
+    if (!documentoId) {
+      alert('No se pudo identificar el documento a eliminar.');
+      return;
+    }
+
+    try {
+      const res = await fetchWithAuth(`/empleados/${id}/documentos/${documentoId}`, {
+        method: 'DELETE'
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || 'Error eliminando documento');
+      }
+
+      await fetchEmpleado();
+      setSuccessMessage('Documento eliminado correctamente.');
+      setShowSuccessModal(true);
+      if (editingDocument && editingDocument.id === doc.id) {
+        resetDocumentoForm();
+      }
+    } catch (error) {
+      console.error('Error eliminando documento:', error);
+      alert(error.message || 'No se pudo eliminar el documento');
     }
   };
 
   const cargarDocumento = async () => {
-    if (!nuevoDocumento) {
+    if (!editingDocument && !nuevoDocumento) {
       alert('Selecciona un archivo primero');
       return;
     }
@@ -234,27 +287,36 @@ function EmpleadoDetalle() {
     setCargandoDocumento(true);
     try {
       const formData = new FormData();
-      formData.append('documento', nuevoDocumento);
+      if (nuevoDocumento) {
+        formData.append('documento', nuevoDocumento);
+      }
+      if (documentName) {
+        formData.append('nombre_original', documentName);
+      }
 
-      const res = await fetchWithAuth(`/empleados/${id}/documentos`, {
-        method: 'POST',
+      const documentoId = editingDocument?.id ?? editingDocument?.documento_id ?? editingDocument?.documentoId;
+      const endpoint = editingDocument
+        ? `/empleados/${id}/documentos/${documentoId}`
+        : `/empleados/${id}/documentos`;
+      const method = editingDocument ? 'POST' : 'POST';
+
+      const res = await fetchWithAuth(endpoint, {
+        method,
         body: formData
       });
 
       if (res.ok) {
-        const data = await res.json();
-        setDocumentos([...documentos, data]);
-        setNuevoDocumento(null);
-        setShowDocumentoForm(false);
-        setSuccessMessage('Documento cargado exitosamente.');
+        await fetchEmpleado();
+        setSuccessMessage(editingDocument ? 'Documento actualizado correctamente.' : 'Documento cargado exitosamente.');
         setShowSuccessModal(true);
+        resetDocumentoForm();
       } else {
         const error = await res.json();
-        alert(`Error al cargar documento: ${error.message}`);
+        alert(`Error guardando documento: ${error.message}`);
       }
     } catch (error) {
-      console.error('Error cargando documento:', error);
-      alert('Error al cargar el documento');
+      console.error('Error guardando documento:', error);
+      alert('Error al guardar el documento');
     } finally {
       setCargandoDocumento(false);
     }
@@ -646,31 +708,53 @@ function EmpleadoDetalle() {
             <div className="documentos-card">
               <div className="documentos-header">
                 <h3>📄 Documentos</h3>
-                {canViewAssignedReports && (
+                {canEditDocuments && (
                   <button
                     type="button"
                     className="btn-agregar-documento"
-                    onClick={() => setShowDocumentoForm(!showDocumentoForm)}
+                    onClick={() => {
+                      if (showDocumentoForm) {
+                        resetDocumentoForm();
+                      } else {
+                        setShowDocumentoForm(true);
+                      }
+                    }}
                   >
-                    {showDocumentoForm ? "Cancelar" : "+ Agregar Documento"}
+                    {showDocumentoForm ? "Cancelar" : editingDocument ? "Cancelar edición" : "+ Agregar Documento"}
                   </button>
                 )}
               </div>
 
-              {showDocumentoForm && canViewAssignedReports && (
+              {showDocumentoForm && canEditDocuments && (
                 <div className="documento-form">
-                  <input
-                    type="file"
-                    onChange={handleDocumentoChange}
-                    accept=".pdf,.doc,.docx,.xlsx,.jpg,.jpeg,.png"
-                  />
+                  <div className="form-group">
+                    <label>Nombre del documento</label>
+                    <input
+                      type="text"
+                      value={documentName}
+                      onChange={(e) => setDocumentName(e.target.value)}
+                      placeholder="Nombre a mostrar (opcional)"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>{editingDocument ? "Reemplazar archivo" : "Seleccionar archivo"}</label>
+                    <input
+                      type="file"
+                      onChange={handleDocumentoChange}
+                      accept=".pdf,.doc,.docx,.xlsx,.jpg,.jpeg,.png"
+                    />
+                  </div>
                   <button
                     type="button"
                     className="btn-cargar-documento"
                     onClick={cargarDocumento}
-                    disabled={!nuevoDocumento || cargandoDocumento}
+                    disabled={cargandoDocumento || (!editingDocument && !nuevoDocumento)}
                   >
-                    {cargandoDocumento ? "Cargando..." : "Cargar Documento"}
+                    {cargandoDocumento
+                      ? "Guardando..."
+                      : editingDocument
+                        ? "Actualizar Documento"
+                        : "Subir Documento"}
                   </button>
                 </div>
               )}
@@ -685,6 +769,24 @@ function EmpleadoDetalle() {
                         </a>
                         <p className="documento-fecha">{new Date(doc.fecha_subida).toLocaleDateString("es-CO")}</p>
                       </div>
+                      {canEditDocuments && (
+                        <div className="doc-actions">
+                          <button
+                            type="button"
+                            className="btn-editar-contacto"
+                            onClick={() => startEditDocumento(doc)}
+                          >
+                            Editar
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-eliminar-documento"
+                            onClick={() => deleteDocumento(doc)}
+                          >
+                            Eliminar
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ))
                 ) : (

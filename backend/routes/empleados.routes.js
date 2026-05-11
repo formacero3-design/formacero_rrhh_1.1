@@ -14,7 +14,9 @@ import {
   getEmpleadoById,
   getCertificadoEmpleado,
   createContactoEmergencia,
-  updateContactoEmergencia
+  updateContactoEmergencia,
+  updateDocumento,
+  deleteDocumento
 } from "../controllers/empleados.controller.js";
 
 import { verifyToken } from "../middlewares/auth.middleware.js";
@@ -65,6 +67,12 @@ router.post("/:id/documentos", upload.single("documento"), async (req, res) => {
   try {
     const { id } = req.params;
     const file = req.file;
+    const currentEmpleadoId = String(req.user?.empleado_id || req.user?.id || "");
+    const isAdmin = req.user?.rol === "admin";
+
+    if (!isAdmin && String(id) !== currentEmpleadoId) {
+      return res.status(403).json({ message: "No tienes permiso para subir documentos a este empleado." });
+    }
 
     if (!file) {
       return res.status(400).json({ message: "No se proporcionó archivo" });
@@ -117,6 +125,10 @@ router.post("/:id/documentos", upload.single("documento"), async (req, res) => {
     res.status(500).json(err);
   }
 });
+
+router.put("/:id/documentos/:documentoId", upload.single("documento"), updateDocumento);
+router.post("/:id/documentos/:documentoId", upload.single("documento"), updateDocumento);
+router.delete("/:id/documentos/:documentoId", deleteDocumento);
 
 // 🗑 =============================
 // EX-EMPLEADOS

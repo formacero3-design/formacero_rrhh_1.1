@@ -236,10 +236,122 @@
   margin: 0;
 }
 
-.detalle-tabs {
+.documentos-header {
   display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.documento-form {
+  display: grid;
   gap: 12px;
-  justify-content: center;
+  margin-bottom: 18px;
+  padding: 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.documento-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.documento-form input[type="text"],
+.documento-form input[type="file"] {
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-family: inherit;
+}
+
+.btn-agregar-documento,
+.btn-cargar-documento,
+.btn-editar-contacto {
+  border: none;
+  padding: 10px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.btn-agregar-documento,
+.btn-editar-contacto {
+  border: 1px solid #1d4ed8;
+  background: white;
+  color: #1d4ed8;
+}
+
+.btn-agregar-documento:hover,
+.btn-editar-contacto:hover {
+  background: #1d4ed8;
+  color: white;
+}
+
+.btn-cargar-documento {
+  background: #2563eb;
+  color: white;
+}
+
+.btn-cargar-documento:hover:not(:disabled) {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+.btn-eliminar-documento {
+  border: 1px solid #ef4444;
+  background: white;
+  color: #ef4444;
+  padding: 10px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.btn-eliminar-documento:hover {
+  background: #ef4444;
+  color: white;
+}
+
+.documento-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: white;
+}
+
+.documento-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.documento-link {
+  text-decoration: none;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+.documento-fecha {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.doc-actions {
+  display: flex;
+  gap: 8px;
+}
+
   margin: 0 auto 24px;
   flex-wrap: wrap;
   max-width: 750px;

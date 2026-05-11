@@ -362,6 +362,127 @@ export const updateEmpleado = async (req, res) => {
   }
 };
 
+// 🔹 ACTUALIZAR DOCUMENTO DE EMPLEADO
+export const updateDocumento = async (req, res) => {
+  try {
+    const { id, documentoId } = req.params;
+    const file = req.file || null;
+    const { nombre_original } = req.body;
+    const currentEmpleadoId = String(req.user?.empleado_id || req.user?.id || "");
+    const isAdmin = req.user?.rol === "admin";
+
+    const { data: existingDoc, error: existingDocError } = await supabase
+      .from("documentos_empleado")
+      .select("empleado_id")
+      .eq("id", documentoId)
+      .single();
+
+    if (existingDocError) {
+      throw existingDocError;
+    }
+
+    if (!existingDoc) {
+      return res.status(404).json({ message: "Documento no encontrado" });
+    }
+
+    if (!isAdmin && String(existingDoc.empleado_id) !== currentEmpleadoId) {
+      return res.status(403).json({ message: "No tienes permiso para editar este documento" });
+    }
+
+    if (String(existingDoc.empleado_id) !== String(id)) {
+      return res.status(403).json({ message: "El documento no pertenece a este empleado" });
+    }
+
+    const updatePayload = {};
+
+    if (nombre_original !== undefined) {
+      updatePayload.nombre_original = nombre_original || null;
+    }
+
+    if (file) {
+      const ext = file.originalname.split(".").pop() || "bin";
+      const filePath = `documentos/${id}/${Date.now()}-${Math.round(Math.random() * 1e9)}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("empleados")
+        .upload(filePath, file.buffer, {
+          contentType: file.mimetype,
+          upsert: true,
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: publicUrlData } = await supabase.storage
+        .from("empleados")
+        .getPublicUrl(filePath);
+
+      updatePayload.url = publicUrlData?.publicUrl || filePath;
+      updatePayload.tipo = file.mimetype;
+    }
+
+    if (Object.keys(updatePayload).length === 0) {
+      return res.status(400).json({ message: "No se enviaron datos para actualizar" });
+    }
+
+    const { data, error } = await supabase
+      .from("documentos_empleado")
+      .update(updatePayload)
+      .eq("id", documentoId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.json(data);
+  } catch (err) {
+    console.error("ERROR UPDATE DOCUMENTO:", err);
+    res.status(500).json(err);
+  }
+};
+
+// 🔹 ELIMINAR DOCUMENTO DE EMPLEADO
+export const deleteDocumento = async (req, res) => {
+  try {
+    const { id, documentoId } = req.params;
+    const currentEmpleadoId = String(req.user?.empleado_id || req.user?.id || "");
+    const isAdmin = req.user?.rol === "admin";
+
+    const { data: existingDoc, error: existingDocError } = await supabase
+      .from("documentos_empleado")
+      .select("empleado_id, url")
+      .eq("id", documentoId)
+      .single();
+
+    if (existingDocError) {
+      throw existingDocError;
+    }
+
+    if (!existingDoc) {
+      return res.status(404).json({ message: "Documento no encontrado" });
+    }
+
+    if (!isAdmin && String(existingDoc.empleado_id) !== currentEmpleadoId) {
+      return res.status(403).json({ message: "No tienes permiso para eliminar este documento" });
+    }
+
+    if (String(existingDoc.empleado_id) !== String(id)) {
+      return res.status(403).json({ message: "El documento no pertenece a este empleado" });
+    }
+
+    const { error } = await supabase
+      .from("documentos_empleado")
+      .delete()
+      .eq("id", documentoId);
+
+    if (error) throw error;
+
+    res.json({ message: "Documento eliminado correctamente" });
+  } catch (err) {
+    console.error("ERROR DELETE DOCUMENTO:", err);
+    res.status(500).json(err);
+  }
+};
+
 // 🔹 CREAR CONTACTO DE EMERGENCIA
 export const createContactoEmergencia = async (req, res) => {
   try {
