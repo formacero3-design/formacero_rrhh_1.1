@@ -313,6 +313,11 @@ export const createEmpleado = async (req, res) => {
   }
 };
 
+const isAuthorizedEmpleado = (req, empleadoId) => {
+  const currentEmpleadoId = String(req.user?.empleado_id || req.user?.id || "");
+  return req.user?.rol === "admin" || String(empleadoId) === currentEmpleadoId;
+};
+
 // 🔹 ACTUALIZAR EMPLEADO
 export const updateEmpleado = async (req, res) => {
   try {
@@ -353,6 +358,108 @@ export const updateEmpleado = async (req, res) => {
     res.json({ message: "Empleado actualizado" });
   } catch (err) {
     console.error("ERROR UPDATE:", err);
+    res.status(500).json(err);
+  }
+};
+
+// 🔹 CREAR CONTACTO DE EMERGENCIA
+export const createContactoEmergencia = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!isAuthorizedEmpleado(req, id)) {
+      return res.status(403).json({ message: "No tienes permiso para modificar este empleado." });
+    }
+
+    const {
+      nombre,
+      relacion,
+      telefono_principal,
+      telefono_alternativo,
+      direccion,
+      ciudad
+    } = req.body;
+
+    if (!nombre || !relacion || !telefono_principal) {
+      return res.status(400).json({ message: "Nombre, relación y teléfono principal son obligatorios." });
+    }
+
+    const contactoPayload = {
+      empleado_id: id,
+      nombre,
+      relacion,
+      telefono_principal,
+      telefono_alternativo: telefono_alternativo || null,
+      direccion: direccion || null,
+      ciudad: ciudad || null,
+      autorizacion: false
+    };
+
+    const { data, error } = await supabase
+      .from("contactos_emergencia")
+      .insert([contactoPayload])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.json(data);
+  } catch (err) {
+    console.error("ERROR CREATE CONTACTO EMERGENCIA:", err);
+    res.status(500).json(err);
+  }
+};
+
+// 🔹 ACTUALIZAR CONTACTO DE EMERGENCIA
+export const updateContactoEmergencia = async (req, res) => {
+  try {
+    const { id, contactoId } = req.params;
+    if (!isAuthorizedEmpleado(req, id)) {
+      return res.status(403).json({ message: "No tienes permiso para modificar este empleado." });
+    }
+
+    const { data: existingContacto, error: existingError } = await supabase
+      .from("contactos_emergencia")
+      .select("empleado_id")
+      .eq("id", contactoId)
+      .single();
+
+    if (existingError) {
+      throw existingError;
+    }
+
+    if (!existingContacto || String(existingContacto.empleado_id) !== String(id)) {
+      return res.status(404).json({ message: "Contacto de emergencia no encontrado para este empleado." });
+    }
+
+    const {
+      nombre,
+      relacion,
+      telefono_principal,
+      telefono_alternativo,
+      direccion,
+      ciudad
+    } = req.body;
+
+    const updatePayload = {};
+    if (nombre !== undefined) updatePayload.nombre = nombre;
+    if (relacion !== undefined) updatePayload.relacion = relacion;
+    if (telefono_principal !== undefined) updatePayload.telefono_principal = telefono_principal;
+    if (telefono_alternativo !== undefined) updatePayload.telefono_alternativo = telefono_alternativo || null;
+    if (direccion !== undefined) updatePayload.direccion = direccion || null;
+    if (ciudad !== undefined) updatePayload.ciudad = ciudad || null;
+
+    const { data, error } = await supabase
+      .from("contactos_emergencia")
+      .update(updatePayload)
+      .eq("id", contactoId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.json(data);
+  } catch (err) {
+    console.error("ERROR UPDATE CONTACTO EMERGENCIA:", err);
     res.status(500).json(err);
   }
 };

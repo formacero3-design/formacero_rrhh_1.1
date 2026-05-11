@@ -188,13 +188,22 @@
   color: #1d4ed8;
 }
 
+.contacto-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .subtitulo {
   margin: 4px 0 0;
   color: #475569;
   font-size: 0.95rem;
 }
 
-.toggle-contacto-btn {
+.toggle-contacto-btn,
+.btn-agregar-contacto,
+.btn-editar-contacto {
   border: 1px solid #1d4ed8;
   background: #ffffff;
   color: #1d4ed8;
@@ -202,6 +211,13 @@
   border-radius: 999px;
   cursor: pointer;
   transition: background 0.2s ease, color 0.2s ease;
+}
+
+.toggle-contacto-btn:hover,
+.btn-agregar-contacto:hover,
+.btn-editar-contacto:hover {
+  background: #1d4ed8;
+  color: white;
 }
 
 .toggle-contacto-btn:hover {

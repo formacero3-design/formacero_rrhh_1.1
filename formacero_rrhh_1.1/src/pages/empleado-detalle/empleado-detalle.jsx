@@ -31,6 +31,18 @@ function EmpleadoDetalle() {
   const [cargandoDocumento, setCargandoDocumento] = useState(false);
   const [showDocumentoForm, setShowDocumentoForm] = useState(false);
 
+  const [contactoForm, setContactoForm] = useState({
+    nombre: "",
+    relacion: "",
+    telefono_principal: "",
+    telefono_alternativo: "",
+    direccion: "",
+    ciudad: ""
+  });
+  const [editingContacto, setEditingContacto] = useState(null);
+  const [showContactoEditor, setShowContactoEditor] = useState(false);
+  const [contactoLoading, setContactoLoading] = useState(false);
+
   const currentUser = JSON.parse(localStorage.getItem("user")) || {};
   const currentEmployeeId = currentUser?.empleado_id ?? currentUser?.id;
   const allowedUserRoles = ["user", "empleado", "usuario"];
@@ -41,6 +53,27 @@ function EmpleadoDetalle() {
   const token = localStorage.getItem("token");
   const user = JSON.parse(localStorage.getItem("user") || "null");
   const allowedEmployeeId = String(user?.empleado_id || user?.id || "");
+
+  const fetchEmpleado = async () => {
+    try {
+      const res = await fetchWithAuth(`/empleados/${id}`);
+
+      if (!res.ok) throw new Error("Empleado no encontrado");
+
+      const data = await res.json();
+      setEmpleado(data);
+      if (data.documentos) {
+        setDocumentos(data.documentos);
+      }
+      setEditData({
+        nombre: data.nombre || '',
+        telefono: data.telefono || '',
+        direccion: data.direccion || ''
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   const fetchReportes = async () => {
     if (!canViewAssignedReports) return;
@@ -76,29 +109,7 @@ function EmpleadoDetalle() {
       return;
     }
 
-    const getEmpleado = async () => {
-      try {
-        const res = await fetchWithAuth(`/empleados/${id}`);
-
-        if (!res.ok) throw new Error("Empleado no encontrado");
-
-        const data = await res.json();
-        setEmpleado(data);
-        if (data.documentos) {
-          setDocumentos(data.documentos);
-        }
-        setEditData({
-          nombre: data.nombre || '',
-          telefono: data.telefono || '',
-          direccion: data.direccion || ''
-        });
-
-      } catch (error) {
-        console.error(error);
-      }
-    };
-
-    getEmpleado();
+    fetchEmpleado();
     fetchReportes();
 
   }, [id, token, navigate, canViewAssignedReports, currentEmployeeId]);
@@ -126,6 +137,81 @@ function EmpleadoDetalle() {
       return;
     }
     setProfilePhoto(file);
+  };
+
+  const resetContactoForm = () => {
+    setContactoForm({
+      nombre: "",
+      relacion: "",
+      telefono_principal: "",
+      telefono_alternativo: "",
+      direccion: "",
+      ciudad: ""
+    });
+    setEditingContacto(null);
+  };
+
+  const handleContactoFormChange = (field, value) => {
+    setContactoForm({ ...contactoForm, [field]: value });
+  };
+
+  const startNewContacto = () => {
+    resetContactoForm();
+    setShowContactoEditor(true);
+  };
+
+  const startEditContacto = (contacto) => {
+    setContactoForm({
+      nombre: contacto.nombre || "",
+      relacion: contacto.relacion || "",
+      telefono_principal: contacto.telefono_principal || "",
+      telefono_alternativo: contacto.telefono_alternativo || "",
+      direccion: contacto.direccion || "",
+      ciudad: contacto.ciudad || ""
+    });
+    setEditingContacto(contacto);
+    setShowContactoEditor(true);
+  };
+
+  const cancelarContacto = () => {
+    resetContactoForm();
+    setShowContactoEditor(false);
+  };
+
+  const saveContacto = async () => {
+    if (!contactoForm.nombre || !contactoForm.relacion || !contactoForm.telefono_principal) {
+      alert("Nombre, relación y teléfono principal son obligatorios.");
+      return;
+    }
+
+    setContactoLoading(true);
+    try {
+      const method = editingContacto ? "PUT" : "POST";
+      const endpoint = editingContacto
+        ? `/empleados/${id}/contacto-emergencia/${editingContacto.id}`
+        : `/empleados/${id}/contacto-emergencia`;
+
+      const res = await fetchWithAuth(endpoint, {
+        method,
+        body: JSON.stringify(contactoForm)
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Error guardando contacto de emergencia");
+      }
+
+      await fetchEmpleado();
+      setSuccessMessage(editingContacto ? "Contacto actualizado correctamente." : "Contacto agregado correctamente.");
+      setShowSuccessModal(true);
+      setShowContactoEditor(false);
+      resetContactoForm();
+    } catch (error) {
+      console.error("Error guardando contacto de emergencia:", error);
+      alert(error.message || "No se pudo guardar el contacto de emergencia.");
+    } finally {
+      setContactoLoading(false);
+    }
   };
 
   const confirmarGuardar = () => {
@@ -428,21 +514,43 @@ function EmpleadoDetalle() {
                   <h3>Contacto de Emergencia</h3>
                   <p className="subtitulo">Información confidencial y disponible en caso de emergencia</p>
                 </div>
-                <button
-                  type="button"
-                  className="toggle-contacto-btn"
-                  onClick={() => setShowContactoEmergencia(!showContactoEmergencia)}
-                >
-                  {showContactoEmergencia ? "Ocultar" : "Mostrar"}
-                </button>
+                <div className="contacto-buttons">
+                  <button
+                    type="button"
+                    className="toggle-contacto-btn"
+                    onClick={() => setShowContactoEmergencia(!showContactoEmergencia)}
+                  >
+                    {showContactoEmergencia ? "Ocultar" : "Mostrar"}
+                  </button>
+                  {canViewAssignedReports && (
+                    <button
+                      type="button"
+                      className="btn-agregar-contacto"
+                      onClick={showContactoEditor ? cancelarContacto : startNewContacto}
+                    >
+                      {showContactoEditor ? "Cancelar" : "+ Agregar contacto"}
+                    </button>
+                  )}
+                </div>
               </div>
 
               {showContactoEmergencia && (
                 <div className="contacto-details">
                   {empleado.contactos_emergencia && empleado.contactos_emergencia.length > 0 ? (
                     empleado.contactos_emergencia.map((contacto) => (
-                      <div key={contacto.id}>
-                        <p><strong>Nombre:</strong> {contacto.nombre}</p>
+                      <div key={contacto.id} className="contacto-item">
+                        <div className="contacto-item-header">
+                          <h4>{contacto.nombre}</h4>
+                          {canViewAssignedReports && (
+                            <button
+                              type="button"
+                              className="btn-editar-contacto"
+                              onClick={() => startEditContacto(contacto)}
+                            >
+                              Editar
+                            </button>
+                          )}
+                        </div>
                         <p><strong>Relación:</strong> {contacto.relacion}</p>
                         <p><strong>Teléfono principal:</strong> {contacto.telefono_principal}</p>
                         <p><strong>Teléfono alternativo:</strong> {contacto.telefono_alternativo || "-"}</p>
@@ -454,6 +562,83 @@ function EmpleadoDetalle() {
                   ) : (
                     <p>No se encontró información de contacto de emergencia.</p>
                   )}
+                </div>
+              )}
+
+              {showContactoEditor && (
+                <div className="contacto-formulario">
+                  <h4>{editingContacto ? "Editar contacto de emergencia" : "Agregar contacto de emergencia"}</h4>
+                  <div className="form-group">
+                    <label>Nombre</label>
+                    <input
+                      type="text"
+                      value={contactoForm.nombre}
+                      onChange={(e) => handleContactoFormChange('nombre', e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Relación</label>
+                    <input
+                      type="text"
+                      value={contactoForm.relacion}
+                      onChange={(e) => handleContactoFormChange('relacion', e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Teléfono principal</label>
+                    <input
+                      type="tel"
+                      value={contactoForm.telefono_principal}
+                      onChange={(e) => handleContactoFormChange('telefono_principal', e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Teléfono alternativo</label>
+                    <input
+                      type="tel"
+                      value={contactoForm.telefono_alternativo}
+                      onChange={(e) => handleContactoFormChange('telefono_alternativo', e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Dirección</label>
+                    <input
+                      type="text"
+                      value={contactoForm.direccion}
+                      onChange={(e) => handleContactoFormChange('direccion', e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Ciudad</label>
+                    <input
+                      type="text"
+                      value={contactoForm.ciudad}
+                      onChange={(e) => handleContactoFormChange('ciudad', e.target.value)}
+                    />
+                  </div>
+                  <div className="form-actions">
+                    <button
+                      type="button"
+                      className="btn-guardar"
+                      onClick={saveContacto}
+                      disabled={contactoLoading}
+                    >
+                      {contactoLoading
+                        ? (editingContacto ? "Guardando cambios..." : "Guardando...")
+                        : (editingContacto ? "Guardar cambios" : "Agregar contacto")}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-cancelar"
+                      onClick={cancelarContacto}
+                      disabled={contactoLoading}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

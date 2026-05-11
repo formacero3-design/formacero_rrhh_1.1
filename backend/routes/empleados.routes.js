@@ -12,7 +12,9 @@ import {
   deleteExEmpleado,
   getCumpleaneros,
   getEmpleadoById,
-  getCertificadoEmpleado
+  getCertificadoEmpleado,
+  createContactoEmergencia,
+  updateContactoEmergencia
 } from "../controllers/empleados.controller.js";
 
 import { verifyToken } from "../middlewares/auth.middleware.js";
@@ -51,6 +53,8 @@ router.post("/", upload.fields([
   { name: "foto", maxCount: 1 },
   { name: "documentos", maxCount: 10 }
 ]), createEmpleado);
+router.post("/:id/contacto-emergencia", createContactoEmergencia);
+router.put("/:id/contacto-emergencia/:contactoId", updateContactoEmergencia);
 router.put("/:id", upload.single("foto"), updateEmpleado);
 router.delete("/:id", deleteEmpleado);
 
