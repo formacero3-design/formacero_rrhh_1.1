@@ -98,27 +98,6 @@ function EmpleadoDetalle() {
       }
     };
 
-    const fetchReportes = async () => {
-      if (!canViewAssignedReports) return;
-      setLoadingReportes(true);
-      try {
-        const res = await fetchWithAuth("/reportes");
-        const data = await res.json();
-        if (!res.ok || !Array.isArray(data)) {
-          setReportes([]);
-          return;
-        }
-
-        const filtered = data.filter((reporte) => String(reporte.empleado_id) === String(currentEmployeeId));
-        setReportes(filtered);
-      } catch (error) {
-        console.error("Error cargando reportes:", error);
-        setReportes([]);
-      } finally {
-        setLoadingReportes(false);
-      }
-    };
-
     getEmpleado();
     fetchReportes();
 

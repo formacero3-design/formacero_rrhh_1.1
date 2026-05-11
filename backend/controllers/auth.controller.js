@@ -73,14 +73,18 @@ export const login = async (req, res) => {
       }
 
       // 🔐 TOKEN (PRODUCCIÓN)
-      const token = jwt.sign(
-        {
-          id: user.id,
-          rol: user.rol
-        },
-        process.env.JWT_SECRET,
-        { expiresIn: "8h" }
-      );
+      const tokenPayload = {
+        id: user.id,
+        rol: user.rol
+      };
+
+      if (user.empleado_id) {
+        tokenPayload.empleado_id = user.empleado_id;
+      }
+
+      const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
+        expiresIn: "8h"
+      });
 
       res.json({
         message: "Login exitoso",
