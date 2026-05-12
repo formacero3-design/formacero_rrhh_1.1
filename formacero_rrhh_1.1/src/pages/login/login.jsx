@@ -67,8 +67,10 @@ function Login() {
       // 🔥 NORMALIZAR USUARIO (IMPORTANTE CON SUPABASE)
       const userData = {
         id: data.user.empleado_id || data.user.id,
+        empleado_id: data.user.empleado_id || data.user.id,
         rol: data.user.rol,
-        nombre: data.user.nombre
+        nombre: data.user.nombre,
+        foto_url: data.user.foto_url
       };
 
       localStorage.setItem("user", JSON.stringify(userData));

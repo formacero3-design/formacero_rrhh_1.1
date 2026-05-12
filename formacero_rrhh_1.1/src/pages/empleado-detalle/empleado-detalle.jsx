@@ -359,6 +359,16 @@ function EmpleadoDetalle() {
         if (empleadoRes.ok) {
           const empleadoActualizado = await empleadoRes.json();
           setEmpleado(empleadoActualizado);
+          
+          // 🔄 ACTUALIZAR USUARIO EN LOCALSTORAGE SI ES PERFIL PROPIO
+          if (isOwnProfile) {
+            const usuarioActualizado = {
+              ...currentUser,
+              nombre: empleadoActualizado.nombre,
+              foto_url: empleadoActualizado.foto_url
+            };
+            localStorage.setItem("user", JSON.stringify(usuarioActualizado));
+          }
         } else {
           setEmpleado({
             ...empleado,

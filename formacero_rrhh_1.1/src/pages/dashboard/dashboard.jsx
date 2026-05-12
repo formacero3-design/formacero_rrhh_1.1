@@ -260,7 +260,7 @@ function Dashboard() {
         {/* 👤 USER + LOGOUT */}
         <div className="user-profile">
           <Link to={`/empleado/${user?.empleado_id || user?.id}`} className="user-link">
-            <img src="https://i.pravatar.cc/40" alt="Usuario"/>
+            <img src={user?.foto_url || `https://i.pravatar.cc/40?u=${user?.id}`} alt="Usuario"/>
             <span>{firstName}</span>
           </Link>
 
