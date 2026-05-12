@@ -47,10 +47,11 @@ function EmpleadoDetalle() {
 
   const currentUser = JSON.parse(localStorage.getItem("user")) || {};
   const currentEmployeeId = currentUser?.empleado_id ?? currentUser?.id;
-  const allowedUserRoles = ["user", "empleado", "usuario"];
-  const isUserRole = allowedUserRoles.includes(currentUser?.rol);
-  const canViewAssignedReports = isUserRole && String(id) === String(currentEmployeeId);
-  const canEditDocuments = currentUser?.rol === "admin" || canViewAssignedReports;
+  const isOwnProfile = String(id) === String(currentEmployeeId);
+  const isAdmin = currentUser?.rol === "admin";
+  const canViewAssignedReports = isOwnProfile && ["user", "empleado", "usuario"].includes(currentUser?.rol);
+  const canEditDocuments = isAdmin || isOwnProfile;
+  const canEditProfile = isAdmin || isOwnProfile;
 
   // ✅ TOKEN
   const token = localStorage.getItem("token");
@@ -104,11 +105,6 @@ function EmpleadoDetalle() {
     // 🔥 PROTECCIÓN
     if (!token) {
       navigate("/login");
-      return;
-    }
-
-    if (user?.rol === "empleado" && String(id) !== allowedEmployeeId) {
-      navigate(`/empleado/${allowedEmployeeId}`);
       return;
     }
 
@@ -384,6 +380,28 @@ function EmpleadoDetalle() {
     return new Date(fecha).toLocaleDateString("es-CO");
   };
 
+  const maskEmail = (email) => {
+    if (!email || !email.includes("@")) return email || "-";
+    const [local, domain] = email.split("@");
+    if (local.length <= 3) return `${local[0]}****@${domain}`;
+    const visibleStart = local.slice(0, 2);
+    const visibleEnd = local.slice(-2);
+    return `${visibleStart}****${visibleEnd}@${domain}`;
+  };
+
+  const maskPhone = (phone) => {
+    if (!phone) return "-";
+    const digits = phone.replace(/\D/g, "");
+    if (digits.length <= 6) return `${digits.slice(0, 3)}****${digits.slice(-3)}`;
+    return `${digits.slice(0, 3)}****${digits.slice(-4)}`;
+  };
+
+  const getIngresoLabel = (fecha) => {
+    if (!fecha) return "-";
+    const date = new Date(fecha);
+    return isOwnProfile ? formatFecha(fecha) : date.getFullYear();
+  };
+
   async function enviarRespuesta(reporteId) {
     try {
       const formData = new FormData();
@@ -455,348 +473,341 @@ function EmpleadoDetalle() {
 
           {activeSection === "info" && (
             <div className="perfil-card">
-
-            <div className="perfil-header">
-              <div className="avatar">
-                <img
-                  src={empleado.foto_url || DEFAULT_PROFILE_IMAGE}
-                  alt={empleado.nombre || "Perfil"}
-                  className="perfil-avatar-img"
-                />
-              </div>
-
-              <div className="perfil-info-header">
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={editData.nombre}
-                    onChange={(e) => handleEditChange('nombre', e.target.value)}
-                    className="edit-input-nombre"
+              <div className="perfil-header">
+                <div className="avatar">
+                  <img
+                    src={empleado.foto_url || DEFAULT_PROFILE_IMAGE}
+                    alt={empleado.nombre || "Perfil"}
+                    className="perfil-avatar-img"
                   />
-                ) : (
-                  <h2>{empleado.nombre}</h2>
-                )}
-                <p>{empleado.cargo}</p>
-                {isEditing && (
-                  <div className="photo-upload-field">
-                    <label htmlFor="profilePhoto">Actualizar foto de perfil</label>
+                </div>
+
+                <div className="perfil-info-header">
+                  {isEditing ? (
                     <input
-                      id="profilePhoto"
-                      type="file"
-                      accept="image/*"
-                      onChange={handleProfilePhoto}
+                      type="text"
+                      value={editData.nombre}
+                      onChange={(e) => handleEditChange('nombre', e.target.value)}
+                      className="edit-input-nombre"
                     />
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="info-grid">
-
-              <p><strong>Cédula:</strong> {empleado.documento}</p>
-              <p><strong>Correo:</strong> {empleado.correo}</p>
-              <p><strong>Cargo:</strong> {empleado.cargo || "Sin cargo"}</p>
-              <p><strong>Departamento:</strong> {empleado.departamento || "Sin asignar"}</p>
-              <p><strong>Salario:</strong> ${empleado.salario}</p>
-
-              <p><strong>Ingreso:</strong> {formatFecha(empleado.fecha_ingreso)}</p>
-              <p><strong>Nacimiento:</strong> {formatFecha(empleado.fecha_nacimiento)}</p>
-
-              <p>
-                <strong>Teléfono:</strong> {" "}
-                {isEditing ? (
-                  <input
-                    type="tel"
-                    value={editData.telefono}
-                    onChange={(e) => handleEditChange('telefono', e.target.value)}
-                    className="edit-input"
-                  />
-                ) : (
-                  empleado.telefono || '-'
-                )}
-              </p>
-
-              <p>
-                <strong>Dirección:</strong> {" "}
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={editData.direccion}
-                    onChange={(e) => handleEditChange('direccion', e.target.value)}
-                    className="edit-input"
-                  />
-                ) : (
-                  empleado.direccion || '-'
-                )}
-              </p>
-
-            </div>
-
-            <div className="edit-actions">
-              {!isEditing ? (
-                <button
-                  type="button"
-                  className="btn-editar"
-                  onClick={() => setIsEditing(true)}
-                >
-                  Editar Información
-                </button>
-              ) : (
-                <div className="edit-buttons">
-                  <button
-                    type="button"
-                    className="btn-guardar"
-                    onClick={confirmarGuardar}
-                    disabled={isSaving}
-                  >
-                    {isSaving ? 'Guardando...' : 'Guardar Cambios'}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-cancelar"
-                    onClick={() => {
-                      setIsEditing(false);
-                      setEditData({
-                        nombre: empleado.nombre || '',
-                        telefono: empleado.telefono || '',
-                        direccion: empleado.direccion || ''
-                      });
-                    }}
-                    disabled={isSaving}
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <div className="contacto-card">
-              <div className="contacto-header">
-                <div>
-                  <h3>Contacto de Emergencia</h3>
-                  <p className="subtitulo">Información confidencial y disponible en caso de emergencia</p>
-                </div>
-                <div className="contacto-buttons">
-                  <button
-                    type="button"
-                    className="toggle-contacto-btn"
-                    onClick={() => setShowContactoEmergencia(!showContactoEmergencia)}
-                  >
-                    {showContactoEmergencia ? "Ocultar" : "Mostrar"}
-                  </button>
-                  {canViewAssignedReports && (
-                    <button
-                      type="button"
-                      className="btn-agregar-contacto"
-                      onClick={showContactoEditor ? cancelarContacto : startNewContacto}
-                    >
-                      {showContactoEditor ? "Cancelar" : "+ Agregar contacto"}
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {showContactoEmergencia && (
-                <div className="contacto-details">
-                  {empleado.contactos_emergencia && empleado.contactos_emergencia.length > 0 ? (
-                    empleado.contactos_emergencia.map((contacto) => (
-                      <div key={contacto.id} className="contacto-item">
-                        <div className="contacto-item-header">
-                          <h4>{contacto.nombre}</h4>
-                          {canViewAssignedReports && (
-                            <button
-                              type="button"
-                              className="btn-editar-contacto"
-                              onClick={() => startEditContacto(contacto)}
-                            >
-                              Editar
-                            </button>
-                          )}
-                        </div>
-                        <p><strong>Relación:</strong> {contacto.relacion}</p>
-                        <p><strong>Teléfono principal:</strong> {contacto.telefono_principal}</p>
-                        <p><strong>Teléfono alternativo:</strong> {contacto.telefono_alternativo || "-"}</p>
-                        <p><strong>Dirección:</strong> {contacto.direccion || "-"}</p>
-                        <p><strong>Ciudad:</strong> {contacto.ciudad || "-"}</p>
-                        <p><strong>Autorización:</strong> {contacto.autorizacion ? "Sí" : "No"}</p>
-                      </div>
-                    ))
                   ) : (
-                    <p>No se encontró información de contacto de emergencia.</p>
+                    <h2>{empleado.nombre}</h2>
+                  )}
+                  <p>{empleado.cargo}</p>
+                  {isEditing && (
+                    <div className="photo-upload-field">
+                      <label htmlFor="profilePhoto">Actualizar foto de perfil</label>
+                      <input
+                        id="profilePhoto"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleProfilePhoto}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="info-grid">
+                <p><strong>Cargo:</strong> {empleado.cargo || "Sin cargo"}</p>
+                <p><strong>Departamento:</strong> {empleado.departamento || empleado.departamentos?.nombre || "Sin asignar"}</p>
+                <p><strong>Correo:</strong> {isOwnProfile ? empleado.correo : maskEmail(empleado.correo)}</p>
+                <p><strong>Teléfono:</strong> {isOwnProfile ? (empleado.telefono || "-") : maskPhone(empleado.telefono)}</p>
+                <p><strong>Ingreso:</strong> {getIngresoLabel(empleado.fecha_ingreso)}</p>
+                <p><strong>Ciudad:</strong> {empleado.ciudad || "-"}</p>
+
+                {isOwnProfile && (
+                  <>
+                    <p><strong>Cédula:</strong> {empleado.documento}</p>
+                    <p><strong>Salario:</strong> ${empleado.salario || "0"}</p>
+                    <p><strong>Nacimiento:</strong> {formatFecha(empleado.fecha_nacimiento)}</p>
+                    <p>
+                      <strong>Dirección:</strong> {" "}
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          value={editData.direccion}
+                          onChange={(e) => handleEditChange('direccion', e.target.value)}
+                          className="edit-input"
+                        />
+                      ) : (
+                        empleado.direccion || '-'
+                      )}
+                    </p>
+                  </>
+                )}
+              </div>
+
+              {canEditProfile && (
+                <div className="edit-actions">
+                  {!isEditing ? (
+                    <button
+                      type="button"
+                      className="btn-editar"
+                      onClick={() => setIsEditing(true)}
+                    >
+                      Editar Información
+                    </button>
+                  ) : (
+                    <div className="edit-buttons">
+                      <button
+                        type="button"
+                        className="btn-guardar"
+                        onClick={confirmarGuardar}
+                        disabled={isSaving}
+                      >
+                        {isSaving ? 'Guardando...' : 'Guardar Cambios'}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-cancelar"
+                        onClick={() => {
+                          setIsEditing(false);
+                          setEditData({
+                            nombre: empleado.nombre || '',
+                            telefono: empleado.telefono || '',
+                            direccion: empleado.direccion || ''
+                          });
+                        }}
+                        disabled={isSaving}
+                      >
+                        Cancelar
+                      </button>
+                    </div>
                   )}
                 </div>
               )}
 
-              {showContactoEditor && (
-                <div className="contacto-formulario">
-                  <h4>{editingContacto ? "Editar contacto de emergencia" : "Agregar contacto de emergencia"}</h4>
-                  <div className="form-group">
-                    <label>Nombre</label>
-                    <input
-                      type="text"
-                      value={contactoForm.nombre}
-                      onChange={(e) => handleContactoFormChange('nombre', e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Relación</label>
-                    <input
-                      type="text"
-                      value={contactoForm.relacion}
-                      onChange={(e) => handleContactoFormChange('relacion', e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Teléfono principal</label>
-                    <input
-                      type="tel"
-                      value={contactoForm.telefono_principal}
-                      onChange={(e) => handleContactoFormChange('telefono_principal', e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Teléfono alternativo</label>
-                    <input
-                      type="tel"
-                      value={contactoForm.telefono_alternativo}
-                      onChange={(e) => handleContactoFormChange('telefono_alternativo', e.target.value)}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Dirección</label>
-                    <input
-                      type="text"
-                      value={contactoForm.direccion}
-                      onChange={(e) => handleContactoFormChange('direccion', e.target.value)}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Ciudad</label>
-                    <input
-                      type="text"
-                      value={contactoForm.ciudad}
-                      onChange={(e) => handleContactoFormChange('ciudad', e.target.value)}
-                    />
-                  </div>
-                  <div className="form-actions">
-                    <button
-                      type="button"
-                      className="btn-guardar"
-                      onClick={saveContacto}
-                      disabled={contactoLoading}
-                    >
-                      {contactoLoading
-                        ? (editingContacto ? "Guardando cambios..." : "Guardando...")
-                        : (editingContacto ? "Guardar cambios" : "Agregar contacto")}
-                    </button>
-                    <button
-                      type="button"
-                      className="btn-cancelar"
-                      onClick={cancelarContacto}
-                      disabled={contactoLoading}
-                    >
-                      Cancelar
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="documentos-card">
-              <div className="documentos-header">
-                <h3>📄 Documentos</h3>
-                {canEditDocuments && (
-                  <button
-                    type="button"
-                    className="btn-agregar-documento"
-                    onClick={() => {
-                      if (showDocumentoForm) {
-                        resetDocumentoForm();
-                      } else {
-                        setShowDocumentoForm(true);
-                      }
-                    }}
-                  >
-                    {showDocumentoForm ? "Cancelar" : editingDocument ? "Cancelar edición" : "+ Agregar Documento"}
-                  </button>
-                )}
-              </div>
-
-              {showDocumentoForm && canEditDocuments && (
-                <div className="documento-form">
-                  <div className="form-group">
-                    <label>Nombre del documento</label>
-                    <input
-                      type="text"
-                      value={documentName}
-                      onChange={(e) => setDocumentName(e.target.value)}
-                      placeholder="Nombre a mostrar (opcional)"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>{editingDocument ? "Reemplazar archivo" : "Seleccionar archivo"}</label>
-                    <input
-                      type="file"
-                      onChange={handleDocumentoChange}
-                      accept=".pdf,.doc,.docx,.xlsx,.jpg,.jpeg,.png"
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    className="btn-cargar-documento"
-                    onClick={cargarDocumento}
-                    disabled={cargandoDocumento || (!editingDocument && !nuevoDocumento)}
-                  >
-                    {cargandoDocumento
-                      ? "Guardando..."
-                      : editingDocument
-                        ? "Actualizar Documento"
-                        : "Subir Documento"}
-                  </button>
-                </div>
-              )}
-
-              <div className="documentos-list">
-                {documentos && documentos.length > 0 ? (
-                  documentos.map((doc) => (
-                    <div key={doc.id} className="documento-item">
-                      <div className="documento-info">
-                        <a href={doc.url} target="_blank" rel="noopener noreferrer" className="documento-link">
-                          📎 {doc.nombre_original}
-                        </a>
-                        <p className="documento-fecha">{new Date(doc.fecha_subida).toLocaleDateString("es-CO")}</p>
-                      </div>
-                      {canEditDocuments && (
-                        <div className="doc-actions">
-                          <button
-                            type="button"
-                            className="btn-editar-contacto"
-                            onClick={() => startEditDocumento(doc)}
-                          >
-                            Editar
-                          </button>
-                          <button
-                            type="button"
-                            className="btn-eliminar-documento"
-                            onClick={() => deleteDocumento(doc)}
-                          >
-                            Eliminar
-                          </button>
-                        </div>
+              {(isOwnProfile || isAdmin) && (
+                <div className="contacto-card">
+                  <div className="contacto-header">
+                    <div>
+                      <h3>Contacto de Emergencia</h3>
+                      <p className="subtitulo">Información confidencial y disponible en caso de emergencia</p>
+                    </div>
+                    <div className="contacto-buttons">
+                      <button
+                        type="button"
+                        className="toggle-contacto-btn"
+                        onClick={() => setShowContactoEmergencia(!showContactoEmergencia)}
+                      >
+                        {showContactoEmergencia ? "Ocultar" : "Mostrar"}
+                      </button>
+                      {canViewAssignedReports && (
+                        <button
+                          type="button"
+                          className="btn-agregar-contacto"
+                          onClick={showContactoEditor ? cancelarContacto : startNewContacto}
+                        >
+                          {showContactoEditor ? "Cancelar" : "+ Agregar contacto"}
+                        </button>
                       )}
                     </div>
-                  ))
-                ) : (
-                  <p className="sin-documentos">No hay documentos cargados.</p>
-                )}
-              </div>
-            </div>
+                  </div>
 
-          </div>
-        )}
+                  {showContactoEmergencia && (
+                    <div className="contacto-details">
+                      {empleado.contactos_emergencia && empleado.contactos_emergencia.length > 0 ? (
+                        empleado.contactos_emergencia.map((contacto) => (
+                          <div key={contacto.id} className="contacto-item">
+                            <div className="contacto-item-header">
+                              <h4>{contacto.nombre}</h4>
+                              {canViewAssignedReports && (
+                                <button
+                                  type="button"
+                                  className="btn-editar-contacto"
+                                  onClick={() => startEditContacto(contacto)}
+                                >
+                                  Editar
+                                </button>
+                              )}
+                            </div>
+                            <p><strong>Relación:</strong> {contacto.relacion}</p>
+                            <p><strong>Teléfono principal:</strong> {contacto.telefono_principal}</p>
+                            <p><strong>Teléfono alternativo:</strong> {contacto.telefono_alternativo || "-"}</p>
+                            <p><strong>Dirección:</strong> {contacto.direccion || "-"}</p>
+                            <p><strong>Ciudad:</strong> {contacto.ciudad || "-"}</p>
+                            <p><strong>Autorización:</strong> {contacto.autorizacion ? "Sí" : "No"}</p>
+                          </div>
+                        ))
+                      ) : (
+                        <p>No se encontró información de contacto de emergencia.</p>
+                      )}
+                    </div>
+                  )}
+
+                  {showContactoEditor && (
+                    <div className="contacto-formulario">
+                      <h4>{editingContacto ? "Editar contacto de emergencia" : "Agregar contacto de emergencia"}</h4>
+                      <div className="form-group">
+                        <label>Nombre</label>
+                        <input
+                          type="text"
+                          value={contactoForm.nombre}
+                          onChange={(e) => handleContactoFormChange('nombre', e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Relación</label>
+                        <input
+                          type="text"
+                          value={contactoForm.relacion}
+                          onChange={(e) => handleContactoFormChange('relacion', e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Teléfono principal</label>
+                        <input
+                          type="tel"
+                          value={contactoForm.telefono_principal}
+                          onChange={(e) => handleContactoFormChange('telefono_principal', e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Teléfono alternativo</label>
+                        <input
+                          type="tel"
+                          value={contactoForm.telefono_alternativo}
+                          onChange={(e) => handleContactoFormChange('telefono_alternativo', e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Dirección</label>
+                        <input
+                          type="text"
+                          value={contactoForm.direccion}
+                          onChange={(e) => handleContactoFormChange('direccion', e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Ciudad</label>
+                        <input
+                          type="text"
+                          value={contactoForm.ciudad}
+                          onChange={(e) => handleContactoFormChange('ciudad', e.target.value)}
+                        />
+                      </div>
+                      <div className="form-actions">
+                        <button
+                          type="button"
+                          className="btn-guardar"
+                          onClick={saveContacto}
+                          disabled={contactoLoading}
+                        >
+                          {contactoLoading
+                            ? (editingContacto ? "Guardando cambios..." : "Guardando...")
+                            : (editingContacto ? "Guardar cambios" : "Agregar contacto")}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-cancelar"
+                          onClick={cancelarContacto}
+                          disabled={contactoLoading}
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {(isOwnProfile || isAdmin) && (
+                <div className="documentos-card">
+                  <div className="documentos-header">
+                    <h3>📄 Documentos</h3>
+                    {canEditDocuments && (
+                      <button
+                        type="button"
+                        className="btn-agregar-documento"
+                        onClick={() => {
+                          if (showDocumentoForm) {
+                            resetDocumentoForm();
+                          } else {
+                            setShowDocumentoForm(true);
+                          }
+                        }}
+                      >
+                        {showDocumentoForm ? "Cancelar" : editingDocument ? "Cancelar edición" : "+ Agregar Documento"}
+                      </button>
+                    )}
+                  </div>
+
+                  {showDocumentoForm && canEditDocuments && (
+                    <div className="documento-form">
+                      <div className="form-group">
+                        <label>Nombre del documento</label>
+                        <input
+                          type="text"
+                          value={documentName}
+                          onChange={(e) => setDocumentName(e.target.value)}
+                          placeholder="Nombre a mostrar (opcional)"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>{editingDocument ? "Reemplazar archivo" : "Seleccionar archivo"}</label>
+                        <input
+                          type="file"
+                          onChange={handleDocumentoChange}
+                          accept=".pdf,.doc,.docx,.xlsx,.jpg,.jpeg,.png"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        className="btn-cargar-documento"
+                        onClick={cargarDocumento}
+                        disabled={cargandoDocumento || (!editingDocument && !nuevoDocumento)}
+                      >
+                        {cargandoDocumento
+                          ? "Guardando..."
+                          : editingDocument
+                            ? "Actualizar Documento"
+                            : "Subir Documento"}
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="documentos-list">
+                    {documentos && documentos.length > 0 ? (
+                      documentos.map((doc) => (
+                        <div key={doc.id} className="documento-item">
+                          <div className="documento-info">
+                            <a href={doc.url} target="_blank" rel="noopener noreferrer" className="documento-link">
+                              📎 {doc.nombre_original}
+                            </a>
+                            <p className="documento-fecha">{new Date(doc.fecha_subida).toLocaleDateString("es-CO")}</p>
+                          </div>
+                          {canEditDocuments && (
+                            <div className="doc-actions">
+                              <button
+                                type="button"
+                                className="btn-editar-contacto"
+                                onClick={() => startEditDocumento(doc)}
+                              >
+                                Editar
+                              </button>
+                              <button
+                                type="button"
+                                className="btn-eliminar-documento"
+                                onClick={() => deleteDocumento(doc)}
+                              >
+                                Eliminar
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    ) : (
+                      <p className="sin-documentos">No hay documentos cargados.</p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
         {activeSection === "reportes" && canViewAssignedReports && (
           <div className="reportes-panel">
