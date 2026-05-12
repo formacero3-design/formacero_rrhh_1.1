@@ -352,6 +352,9 @@
   gap: 8px;
 }
 
+.detalle-tabs {
+  display: flex;
+  gap: 12px;
   margin: 0 auto 24px;
   flex-wrap: wrap;
   max-width: 750px;

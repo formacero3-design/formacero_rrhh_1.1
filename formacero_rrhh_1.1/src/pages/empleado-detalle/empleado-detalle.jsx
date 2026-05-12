@@ -114,6 +114,15 @@ function EmpleadoDetalle() {
   }, [id, token, navigate, canViewAssignedReports, currentEmployeeId]);
 
   useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab === "reportes" && canViewAssignedReports) {
+      setActiveSection("reportes");
+    } else {
+      setActiveSection("info");
+    }
+  }, [searchParams, canViewAssignedReports]);
+
+  useEffect(() => {
     if (showSuccessModal) {
       const timer = setTimeout(() => {
         setShowSuccessModal(false);

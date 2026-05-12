@@ -358,7 +358,7 @@ function Dashboard() {
         </div>
 
         <Link
-          to={user?.rol === "admin" ? "/reportes?tab=reportes" : `/empleado/${user?.id}?tab=reportes`}
+          to={user?.rol === "admin" ? "/reportes?tab=reportes" : `/empleado/${user?.empleado_id || user?.id}?tab=reportes`}
           className="card alert card-link"
         >
           <h3>Alertas Pendientes</h3>
