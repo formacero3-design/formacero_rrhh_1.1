@@ -254,18 +254,19 @@ function Dashboard() {
       <header className="header">
         <div className="logo">Formacero</div>
 
-        <div className="search-bar" style={{ position: "relative" }}>
-          <input
-            type="text"
-            placeholder="Buscar empleados por nombre, correo o cédula..."
-            value={search}
-            onChange={handleSearchChange}
-            onFocus={() => setShowDropdown(true)}
-            onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
-          />
+        {user?.rol === "admin" && (
+          <div className="search-bar" style={{ position: "relative" }}>
+            <input
+              type="text"
+              placeholder="Buscar empleados por nombre, correo o cédula..."
+              value={search}
+              onChange={handleSearchChange}
+              onFocus={() => setShowDropdown(true)}
+              onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+            />
 
-          {showDropdown && results.length > 0 && (
-            <div className="search-dropdown">
+            {showDropdown && results.length > 0 && (
+              <div className="search-dropdown">
               {results.map(emp => (
                 <div
                   key={emp.id}
@@ -282,9 +283,10 @@ function Dashboard() {
                   </div>
                 </div>
               ))}
-            </div>
-          )}
-        </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* 👤 USER + LOGOUT */}
         <div className="user-profile">
@@ -349,6 +351,43 @@ function Dashboard() {
           </>
         )}
       </nav>
+
+      {user?.rol !== "admin" && (
+        <section className="dashboard-search-panel">
+          <h2>Buscar usuarios</h2>
+          <div className="search-bar" style={{ position: "relative" }}>
+            <input
+              type="text"
+              placeholder="Buscar empleados por nombre, correo o cédula..."
+              value={search}
+              onChange={handleSearchChange}
+              onFocus={() => setShowDropdown(true)}
+              onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+            />
+
+            {showDropdown && results.length > 0 && (
+              <div className="search-dropdown">
+                {results.map(emp => (
+                  <div
+                    key={emp.id}
+                    className="search-item"
+                    onMouseDown={() => navigate(`/empleado/${emp.id}`)}
+                  >
+                    <img
+                      src={emp.foto_url || "/default-profile.svg"}
+                      alt={emp.nombre}
+                    />
+                    <div className="search-item-info">
+                      <strong>{emp.nombre}</strong>
+                      <p>{emp.correo || emp.documento || emp.cargo || "Empleado"}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* CONTENIDO */}
       <main className="dashboard-content">

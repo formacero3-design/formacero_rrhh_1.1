@@ -181,17 +181,39 @@
 }
 
 .search-bar input {
-  width: 280px;
-  padding: 10px 12px;
-  border-radius: 8px;
+  width: 100%;
+  max-width: 100%;
+  padding: 12px 14px;
+  border-radius: 14px;
   border: 1px solid #ccc;
   font-size: 14px;
   outline: none;
   box-sizing: border-box;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease;
 }
 
 .search-bar input:focus {
   border-color: #4a90e2;
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(74, 144, 226, 0.12);
+}
+
+.dashboard-search-panel {
+  margin: 18px 0 28px;
+  width: 100%;
+  max-width: 620px;
+}
+
+.dashboard-search-panel h2 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+  color: #2e4a92;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.dashboard-search-panel .search-bar {
+  width: 100%;
 }
 
 /* Dropdown */
@@ -338,6 +360,13 @@
   .dashboard-content {
     grid-template-columns: 1fr;
     padding: 16px;
+    justify-items: center;
+  }
+
+  .dashboard-content .card {
+    width: 100%;
+    max-width: 360px;
+    margin-inline: auto;
   }
 
   .menu-btn {
@@ -366,6 +395,15 @@
   .menu-btn {
     font-size: 13px;
     padding: 10px 14px;
+  }
+
+  .dashboard-search-panel {
+    box-sizing: border-box;
+    padding: 0 10px;
+  }
+
+  .dashboard-search-panel .search-bar {
+    width: 100%;
   }
 
   .card h3 {
