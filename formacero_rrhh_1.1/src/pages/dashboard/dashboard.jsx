@@ -24,8 +24,14 @@ function Dashboard() {
   // ✅ TOKEN
   const token = localStorage.getItem("token");
 
-  // 👤 USUARIO
-  const user = JSON.parse(localStorage.getItem("user"));
+  const [user, setUser] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("user")) || {};
+    } catch {
+      return {};
+    }
+  });
+
   const firstName = user?.nombre?.trim()?.split(" ")[0] || "Usuario";
 
   console.log("Usuario logueado:", user); // Depuración
@@ -44,6 +50,29 @@ function Dashboard() {
   const cancelLogout = () => {
     setShowLogoutConfirm(false);
   };
+
+  const syncUserFoto = async () => {
+    try {
+      const empleadoId = user?.empleado_id || user?.id;
+      if (!empleadoId || user?.foto_url) return;
+
+      const res = await fetchWithAuth(`/empleados/${empleadoId}`);
+      if (!res.ok) return;
+
+      const data = await res.json();
+      if (data?.foto_url) {
+        const updatedUser = { ...user, foto_url: data.foto_url };
+        setUser(updatedUser);
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+      }
+    } catch (error) {
+      console.error("Error sincronizando foto del usuario:", error);
+    }
+  };
+
+  useEffect(() => {
+    syncUserFoto();
+  }, [user?.empleado_id, user?.id, user?.foto_url]);
 
   // 🔍 BUSCADOR
   const handleSearchChange = async (e) => {
@@ -244,7 +273,7 @@ function Dashboard() {
                   onMouseDown={() => navigate(`/empleado/${emp.id}`)}
                 >
                   <img
-                    src={emp.foto_url || `https://i.pravatar.cc/40?u=${emp.id}`}
+                    src={emp.foto_url || "/default-profile.svg"}
                     alt={emp.nombre}
                   />
                   <div className="search-item-info">
@@ -260,7 +289,7 @@ function Dashboard() {
         {/* 👤 USER + LOGOUT */}
         <div className="user-profile">
           <Link to={`/empleado/${user?.empleado_id || user?.id}`} className="user-link">
-            <img src={user?.foto_url || `https://i.pravatar.cc/40?u=${user?.id}`} alt="Usuario"/>
+            <img src={user?.foto_url || "/default-profile.svg"} alt="Usuario" />
             <span>{firstName}</span>
           </Link>
 

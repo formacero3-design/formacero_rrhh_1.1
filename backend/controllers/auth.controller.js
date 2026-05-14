@@ -86,6 +86,19 @@ export const login = async (req, res) => {
         expiresIn: "8h"
       });
 
+      let fotoUrl = user.foto_url || null;
+      if (!fotoUrl && user.empleado_id) {
+        const { data: empleadoData, error: empleadoError } = await supabase
+          .from("empleados")
+          .select("foto_url")
+          .eq("id", user.empleado_id)
+          .single();
+
+        if (!empleadoError && empleadoData?.foto_url) {
+          fotoUrl = empleadoData.foto_url;
+        }
+      }
+
       res.json({
         message: "Login exitoso",
         token,
@@ -93,7 +106,8 @@ export const login = async (req, res) => {
           id: user.id,
           nombre: user.nombre,
           rol: user.rol,
-          empleado_id: user.empleado_id
+          empleado_id: user.empleado_id,
+          foto_url: fotoUrl
         }
       });
 

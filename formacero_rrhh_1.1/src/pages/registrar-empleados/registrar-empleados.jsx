@@ -219,7 +219,7 @@ function RegistrarEmpleados() {
                   onMouseDown={() => navigate(`/empleado/${emp.id}`)}
                 >
                   <img
-                    src={emp.foto_url || `https://i.pravatar.cc/40?u=${emp.id}`}
+                    src={emp.foto_url || "/default-profile.svg"}
                     alt={emp.nombre}
                   />
                   <div className="search-item-info">

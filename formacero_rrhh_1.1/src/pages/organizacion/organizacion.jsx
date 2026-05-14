@@ -77,7 +77,7 @@ function Organizacion() {
               className={`card ${getClase(emp.cargo)}`}
             >
               <img
-                src={emp.foto_url || `https://i.pravatar.cc/150?u=${emp.id}`}
+                src={emp.foto_url || "/default-profile.svg"}
                 alt={emp.nombre}
               />
 
