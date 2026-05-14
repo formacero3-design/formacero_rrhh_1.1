@@ -278,10 +278,14 @@
 
 /* Si no hay resultados */
 
+.dashboard-header {
+  padding: 0 40px;
+}
+
 .user-profile {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 20px;
 }
 
 .user-profile img {
@@ -304,7 +308,7 @@
   align-items: center;
   justify-content: center;
   line-height: 1;
-  margin-bottom: 15px;
+  margin-bottom: 0;
 }
 
 .logout-btn svg {
@@ -353,8 +357,9 @@
   }
 
   .user-profile {
-    width: 100%;
-    justify-content: space-between;
+    width: auto;
+    justify-content: flex-end;
+    gap: 20px;
   }
 
   .dashboard-content {

@@ -251,7 +251,7 @@ function Dashboard() {
     <div className="app-container">
 
       {/* HEADER */}
-      <header className="header">
+      <header className="header dashboard-header">
         <div className="logo">Formacero</div>
 
         {user?.rol === "admin" && (
