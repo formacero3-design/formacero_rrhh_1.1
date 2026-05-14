@@ -9,6 +9,7 @@ function Organizacion() {
 
   const [empleados, setEmpleados] = useState([]);
   const [search, setSearch] = useState("");
+  const [user, setUser] = useState(null);
 
   const filteredEmployees = empleados.filter(emp =>
     emp.nombre.toLowerCase().includes(search.toLowerCase()) ||
@@ -16,7 +17,18 @@ function Organizacion() {
     (emp.departamento || emp.departamentos?.nombre || "").toLowerCase().includes(search.toLowerCase())
   );
 
-  // 🔥 TRAER DATOS CON TOKEN
+  // � Obtener usuario logueado
+  useEffect(() => {
+    try {
+      const storedUser = JSON.parse(localStorage.getItem("user"));
+      setUser(storedUser || null);
+    } catch (error) {
+      console.error("Error leyendo usuario:", error);
+      setUser(null);
+    }
+  }, []);
+
+  // �🔥 TRAER DATOS CON TOKEN
   useEffect(() => {
     const getOrganizacion = async () => {
       try {
@@ -42,14 +54,16 @@ function Organizacion() {
       <header className="header">
         <div className="logo">Formacero</div>
 
-        <div className="search-bar">
-          <input
-            type="text"
-            placeholder="Buscar empleados, cargos o documentos..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
+        {user?.rol === "admin" && (
+          <div className="search-bar">
+            <input
+              type="text"
+              placeholder="Buscar empleados, cargos o documentos..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+        )}
 
         <Link to="/dashboard" className="back-btn">
           ← Volver al Panel

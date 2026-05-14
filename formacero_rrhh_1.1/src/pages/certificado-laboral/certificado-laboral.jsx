@@ -182,35 +182,37 @@ La presente certificación se expide a solicitud del interesado(a) el día ${tod
       {/* HEADER */}
       <header className="header">
         <div className="logo">Formacero</div>
-        <div className="search-bar">
-          <input
-            placeholder="Buscar empleados por nombre, correo o cédula..."
-            value={search}
-            onChange={handleSearchChange}
-            onFocus={() => setShowDropdown(true)}
-            onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
-          />
-          {showDropdown && results.length > 0 && (
-            <div className="search-dropdown">
-              {results.map(emp => (
-                <div
-                  key={emp.id}
-                  className="search-item"
-                  onMouseDown={() => navigate(`/empleado/${emp.id}`)}
-                >
-                  <img
-                    src={emp.foto_url || "/default-profile.svg"}
-                    alt={emp.nombre}
-                  />
-                  <div className="search-item-info">
-                    <strong>{emp.nombre}</strong>
-                    <p>{emp.correo || emp.documento || emp.cargo || "Empleado"}</p>
+        {user?.rol === "admin" && (
+          <div className="search-bar">
+            <input
+              placeholder="Buscar empleados por nombre, correo o cédula..."
+              value={search}
+              onChange={handleSearchChange}
+              onFocus={() => setShowDropdown(true)}
+              onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+            />
+            {showDropdown && results.length > 0 && (
+              <div className="search-dropdown">
+                {results.map(emp => (
+                  <div
+                    key={emp.id}
+                    className="search-item"
+                    onMouseDown={() => navigate(`/empleado/${emp.id}`)}
+                  >
+                    <img
+                      src={emp.foto_url || "/default-profile.svg"}
+                      alt={emp.nombre}
+                    />
+                    <div className="search-item-info">
+                      <strong>{emp.nombre}</strong>
+                      <p>{emp.correo || emp.documento || emp.cargo || "Empleado"}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
         <Link to="/dashboard" className="back-btn">← Volver al Panel</Link>
       </header>
 
