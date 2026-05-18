@@ -1,6 +1,9 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import path from "path";
+
+const __dirname = path.dirname(new URL(import.meta.url).pathname);
 
 dotenv.config();
 
@@ -74,6 +77,10 @@ app.get("/health", (req, res) => {
 app.use("/api/empleados", empleadosRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/reportes", reportesRoutes);
+
+// Servir archivos subidos localmente si existen
+const uploadsPath = path.join(process.cwd(), "backend", "uploads");
+app.use('/api/uploads', express.static(uploadsPath));
 
 // 🔴 404
 app.use((req, res) => {
