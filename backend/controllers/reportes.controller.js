@@ -1,4 +1,5 @@
 import { db } from "../db.js";
+import { supabase } from "../config/supabase.js";
 
 export const createReporte = (req, res) => {
   const { empleado_id, descripcion, fecha } = req.body;
@@ -14,23 +15,50 @@ export const createReporte = (req, res) => {
   });
 };
 
-export const getReportes = (req, res) => {
+export const getReportes = async (req, res) => {
   console.log("GET /reportes called", req.user);
 
-  let sql = "SELECT * FROM reportes";
-  const params = [];
+  try {
+    let query = supabase.from("reportes").select("*");
 
-  if (req.user?.rol !== "admin") {
-    const empleadoId = req.user?.empleado_id || req.user?.id;
-    sql += " WHERE empleado_id = ?";
-    params.push(empleadoId);
-  }
+    if (req.user?.rol !== "admin") {
+      const empleadoId = req.user?.empleado_id || req.user?.id;
+      query = query.eq("empleado_id", empleadoId);
+    }
 
-  db.query(sql, params, (err, data) => {
-    console.log("Data from db:", data);
-    if (err) return res.status(500).json(err);
+    const { data: reportes, error: reportesError } = await query;
+    if (reportesError) throw reportesError;
+
+    const empleadoIds = [...new Set(reportes
+      .filter((r) => r.empleado_id != null)
+      .map((r) => r.empleado_id))];
+
+    let empleados = [];
+    if (empleadoIds.length > 0) {
+      const { data: empleadoData, error: empleadosError } = await supabase
+        .from("empleados")
+        .select("id, nombre, foto_url")
+        .in("id", empleadoIds);
+
+      if (empleadosError) throw empleadosError;
+      empleados = empleadoData || [];
+    }
+
+    const empleadoMap = new Map(empleados.map((e) => [e.id, e]));
+    const data = reportes.map((reporte) => {
+      const empleado = empleadoMap.get(reporte.empleado_id);
+      return {
+        ...reporte,
+        empleado_nombre: empleado?.nombre || null,
+        foto_url: empleado?.foto_url || null,
+      };
+    });
+
     res.json(data);
-  });
+  } catch (err) {
+    console.error("Error obteniendo reportes:", err);
+    res.status(500).json(err);
+  }
 };
 
 export const updateReporte = (req, res) => {

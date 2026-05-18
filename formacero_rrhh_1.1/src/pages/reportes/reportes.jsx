@@ -57,18 +57,11 @@ function Reportes() {
       }
       const reportesData = Array.isArray(data) ? data : [];
       
-      // Cargar empleados para mapear nombres
-      const resEmp = await fetchWithAuth("/empleados");
-      const empleadosData = await resEmp.json();
-      const empleadosMap = {};
-      if (Array.isArray(empleadosData)) {
-        empleadosData.forEach(emp => empleadosMap[emp.id] = emp.nombre);
-      }
-      
-      // Mapear nombres
+      // Ya viene con nombre y foto del backend
       const reportesConNombre = reportesData.map(rep => ({
         ...rep,
-        empleado: empleadosMap[rep.empleado_id] || "Empleado desconocido"
+        empleado: rep.empleado_nombre || "Empleado desconocido",
+        foto_url: rep.foto_url || "/default-profile.svg"
       }));
       
       setReportes(reportesConNombre);
@@ -360,7 +353,15 @@ function Reportes() {
             <div className="grid-reportes">
               {reportes.map((rep)=> (
                 <div key={rep.id} className="tarjeta">
-                  <h3>{rep.empleado}</h3>
+                  <div className="empleado-header">
+                    <img 
+                      src={rep.foto_url || "/default-profile.svg"}
+                      alt={rep.empleado}
+                      className="empleado-foto"
+                      onError={(e) => { e.target.onerror = null; e.target.src = "/default-profile.svg"; }}
+                    />
+                    <h3>{rep.empleado}</h3>
+                  </div>
                   <div className="fecha">{rep.fecha}</div>
                   <div className="descripcion">{rep.descripcion}</div>
                   <div className="decision"><strong>Decisión:</strong> {rep.decision || "Sin decisión"}</div>
