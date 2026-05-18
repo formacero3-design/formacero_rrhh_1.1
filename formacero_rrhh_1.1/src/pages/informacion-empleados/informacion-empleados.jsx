@@ -11,6 +11,8 @@ function InformacionEmpleados() {
   const [openRow, setOpenRow] = useState(null);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [documentsByEmployee, setDocumentsByEmployee] = useState({});
+  const [documentsLoading, setDocumentsLoading] = useState(null);
   const [deleteCandidate, setDeleteCandidate] = useState(null);
   const [deleteReason, setDeleteReason] = useState("");
   const [deleteError, setDeleteError] = useState("");
@@ -34,11 +36,7 @@ function InformacionEmpleados() {
         cargo: emp.cargo || "",
         departamento: emp.departamento || emp.departamentos?.nombre || "",
         estado: emp.estado || "activo",
-        documentos: [
-          "📄 Contrato Laboral.pdf",
-          "📄 Hoja de Vida.pdf",
-          "📄 Evaluación 2025.pdf"
-        ]
+        documentos: []
       }));
 
       setEmployees(formatted);
@@ -79,8 +77,41 @@ function InformacionEmpleados() {
   );
 
   // 🔽 Mostrar/ocultar documentos
+  const getEmployeeDocuments = async (employeeId) => {
+    setDocumentsLoading(employeeId);
+    try {
+      const res = await fetchWithAuth(`/empleados/${employeeId}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Error cargando documentos");
+      }
+
+      setDocumentsByEmployee(prev => ({
+        ...prev,
+        [employeeId]: data.documentos || []
+      }));
+    } catch (error) {
+      console.error("Error cargando documentos: ", error);
+      setDocumentsByEmployee(prev => ({
+        ...prev,
+        [employeeId]: []
+      }));
+    } finally {
+      setDocumentsLoading(null);
+    }
+  };
+
   function toggleDocuments(index) {
-    setOpenRow(openRow === index ? null : index);
+    const nextOpen = openRow === index ? null : index;
+    setOpenRow(nextOpen);
+
+    if (nextOpen !== null) {
+      const employee = employees[index];
+      if (employee && !documentsByEmployee[employee.id]) {
+        getEmployeeDocuments(employee.id);
+      }
+    }
   }
 
   // ✏️ EDITAR EMPLEADO
@@ -301,9 +332,25 @@ function InformacionEmpleados() {
                   <tr className={`documents-row ${openRow === index ? "open" : ""}`}>
                     <td colSpan="6">
                       <div className="documents">
-                        {emp.documentos.map((doc, i) => (
-                          <p key={i}>{doc}</p>
-                        ))}
+                        {documentsLoading === emp.id ? (
+                          <p>Cargando documentos...</p>
+                        ) : (() => {
+                          const docs = documentsByEmployee[emp.id] ?? emp.documentos ?? [];
+                          if (!docs.length) {
+                            return <p>No hay documentos guardados.</p>;
+                          }
+                          return docs.map((doc, i) => (
+                            <p key={doc.id ?? i}>
+                              {doc.url ? (
+                                <a href={doc.url} target="_blank" rel="noreferrer">
+                                  {doc.nombre_original || doc.url}
+                                </a>
+                              ) : (
+                                doc.nombre_original || "Documento sin nombre"
+                              )}
+                            </p>
+                          ));
+                        })()}
                       </div>
                     </td>
                   </tr>
