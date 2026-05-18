@@ -79,10 +79,15 @@ export const responderReporte = (req, res) => {
   const archivo_excusa = req.file ? req.file.filename : null;
   const reporteId = Number(id);
 
+  // Validar que se envió al menos un comentario o archivo
+  if (!respuesta_empleado && !archivo_excusa) {
+    return res.status(400).json({ message: "Debe enviar un comentario o archivo" });
+  }
+
   console.log("Responder reporte request:", {
     reporteId,
     respuesta_empleado,
-    archivo: req.file,
+    archivo: req.file ? req.file.filename : null,
     user: req.user
   });
 
@@ -95,7 +100,7 @@ export const responderReporte = (req, res) => {
   db.query(checkSql, [reporteId], (checkErr, checkData) => {
     if (checkErr) {
       console.error("Error verificando reporte:", checkErr);
-      return res.status(500).json(checkErr);
+      return res.status(500).json({ message: "Error al verificar el reporte", error: checkErr.message });
     }
     if (!checkData || checkData.length === 0) {
       return res.status(404).json({ message: "Reporte no encontrado" });
@@ -119,9 +124,9 @@ export const responderReporte = (req, res) => {
     db.query(sql, [respuesta_empleado, archivo_excusa, reporteId], (err) => {
       if (err) {
         console.error("Error actualizando respuesta:", err);
-        return res.status(500).json(err);
+        return res.status(500).json({ message: "Error al guardar la respuesta", error: err.message });
       }
-      res.json("Respuesta enviada correctamente");
+      res.json({ message: "Respuesta enviada correctamente" });
     });
   });
 };

@@ -2,13 +2,18 @@ import express from "express";
 import multer from "multer";
 import fs from "fs";
 import path from "path";
+import os from "os";
 import { createReporte, getReportes, updateReporte, deleteReporte, responderReporte } from "../controllers/reportes.controller.js";
 import { verifyToken } from "../middlewares/auth.middleware.js";
 import { requireAdmin } from "../middlewares/roleAuth.js";
 
 const router = express.Router();
 
-const uploadDir = path.join(process.cwd(), "backend", "uploads");
+// 🔹 Usar /tmp en producción (Vercel), backend/uploads en desarrollo
+const uploadDir = process.env.NODE_ENV === "production" 
+  ? path.join(os.tmpdir(), "formacero-uploads")
+  : path.join(process.cwd(), "backend", "uploads");
+
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
