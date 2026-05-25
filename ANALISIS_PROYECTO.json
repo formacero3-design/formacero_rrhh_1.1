@@ -1,0 +1,959 @@
+{
+  "proyecto": "Formacero RRHH 1.1",
+  "descripcion": "Sistema de Gestión de Recursos Humanos para Formacero SAS - Full Stack con React + Express + Supabase",
+  "fecha_analisis": "2026-05-25",
+  "stack_tecnologico": {
+    "frontend": "React 19 + React Router 7 + Vite",
+    "backend": "Node.js + Express 5 + Supabase",
+    "base_datos": "Supabase (PostgreSQL)",
+    "autenticacion": "JWT + bcrypt",
+    "deployment": "Vercel",
+    "email": "Nodemailer (Gmail SMTP)"
+  },
+  "estructura_general": {
+    "backend_puerto": 3001,
+    "frontend_puerto": 5173,
+    "api_prefix": "/api"
+  },
+  "backend": {
+    "servidor_principal": {
+      "archivo": "backend/server.js",
+      "proposito": "Punto de entrada principal del servidor Express con CORS, middlewares y rutas",
+      "componentes_principales": [
+        "Configuración de Express",
+        "CORS dinámico (localhost, GitHub, Vercel)",
+        "Middlewares globales (express.json, logging)",
+        "Servir archivos estáticos (/uploads)",
+        "Rutas principales",
+        "Manejo de errores global"
+      ],
+      "dependencias": [
+        "express ^5.2.1",
+        "cors ^2.8.6",
+        "dotenv ^17.4.0",
+        "path",
+        "fileURLToPath"
+      ],
+      "rutas_definidas": [
+        "GET / - Health check",
+        "GET /health - Health status",
+        "GET /uploads/* - Archivos estáticos",
+        "GET /api/uploads/* - Archivos estáticos alt",
+        "POST /api/auth/* - Autenticación",
+        "GET,POST,PUT,DELETE /api/empleados/* - CRUD empleados",
+        "GET,POST,PUT,DELETE /api/reportes/* - CRUD reportes"
+      ],
+      "variables_entorno": [
+        "SUPABASE_URL",
+        "SUPABASE_ANON_KEY",
+        "SUPABASE_SERVICE_ROLE_KEY",
+        "JWT_SECRET",
+        "FRONTEND_URL",
+        "EMAIL_USER",
+        "EMAIL_PASS",
+        "EMAIL_FROM",
+        "EMAIL_HOST",
+        "EMAIL_PORT",
+        "NODE_ENV"
+      ],
+      "comunicacion": "Importa y usa todas las rutas de auth, empleados y reportes"
+    },
+    "index": {
+      "archivo": "backend/index.js",
+      "proposito": "Configuración de dotenv",
+      "componentes_principales": [
+        "Carga de variables de entorno"
+      ],
+      "dependencias": ["dotenv"]
+    },
+    "db": {
+      "archivo": "backend/db.js",
+      "proposito": "Adaptador de base de datos que traduce SQL MySQL a Supabase",
+      "componentes_principales": [
+        "db.query() - Ejecuta queries SQL convertidas a Supabase",
+        "Soporte SELECT/INSERT/UPDATE para empleados, exempleados, usuarios, reportes, documentos"
+      ],
+      "dependencias": [
+        "@supabase/supabase-js ^2.104.0"
+      ],
+      "nota": "Este archivo está siendo gradualmente reemplazado por directivas Supabase en controladores"
+    },
+    "config_supabase": {
+      "archivo": "backend/config/supabase.js",
+      "proposito": "Inicialización del cliente Supabase con validación de env vars",
+      "componentes_principales": [
+        "Validación de SUPABASE_URL y llaves",
+        "Creación de cliente Supabase",
+        "Warnings para configuración incompleta"
+      ],
+      "dependencias": [
+        "@supabase/supabase-js",
+        "dotenv",
+        "fs",
+        "path"
+      ],
+      "configuracion_paths": [
+        ".env (raíz)",
+        "backend/.env (desarrollo)",
+        "Vercel env vars (producción)"
+      ]
+    },
+    "controller_auth": {
+      "archivo": "backend/controllers/auth.controller.js",
+      "proposito": "Lógica de autenticación: login, forgot-password, reset-password",
+      "funciones_principales": {
+        "login": {
+          "descripcion": "Autentica usuario por correo/usuario y contraseña",
+          "parametros": "{ usuario, correo, password }",
+          "respuesta": "{ message, token, user }",
+          "proceso": "Busca usuario → verifica bcrypt → genera JWT 8h → retorna foto"
+        },
+        "forgotPassword": {
+          "descripcion": "Inicia proceso de recuperación de contraseña",
+          "parametros": "{ correo }",
+          "respuesta": "{ message } con email de reset enviado",
+          "proceso": "Busca usuario → genera token reset → envía email con link"
+        },
+        "resetPassword": {
+          "descripcion": "Establece nueva contraseña con token reset",
+          "parametros": "{ token, nuevaPassword }",
+          "respuesta": "{ message }",
+          "proceso": "Valida token → hashea contraseña → actualiza usuario"
+        }
+      },
+      "dependencias": [
+        "@supabase/supabase-js",
+        "bcrypt ^6.0.0",
+        "jsonwebtoken ^9.0.3",
+        "crypto",
+        "nodemailer ^7.0.10"
+      ],
+      "integraciones": "Supabase, Email SMTP, JWT"
+    },
+    "controller_empleados": {
+      "archivo": "backend/controllers/empleados.controller.js",
+      "proposito": "CRUD completo de empleados, documentos, contactos de emergencia",
+      "funciones_principales": {
+        "getEmpleados": "Obtiene lista de todos los empleados con departamentos",
+        "getEmpleadoById": "Obtiene empleado específico por ID",
+        "createEmpleado": "Crea nuevo empleado con foto y documentos en Supabase Storage",
+        "updateEmpleado": "Actualiza datos del empleado y foto",
+        "deleteEmpleado": "Marca empleado como inactivo",
+        "searchEmpleado": "Busca empleados por nombre, correo, cédula",
+        "countEmpleados": "Retorna total de empleados activos",
+        "getCumpleaneros": "Lista empleados con cumpleaños en mes actual",
+        "getExEmpleados": "Lista empleados retirados/despedidos",
+        "deleteExEmpleado": "Elimina ex-empleado del sistema",
+        "getCertificadoEmpleado": "Genera certificado laboral",
+        "createContactoEmergencia": "Crea contacto de emergencia para empleado",
+        "updateContactoEmergencia": "Actualiza contacto de emergencia",
+        "updateDocumento": "Actualiza documento subido",
+        "deleteDocumento": "Elimina documento de empleado"
+      },
+      "dependencias": [
+        "@supabase/supabase-js",
+        "bcrypt ^6.0.0",
+        "multer ^2.1.1"
+      ],
+      "integraciones": "Supabase Storage (bucket 'empleados'), Supabase DB"
+    },
+    "controller_reportes": {
+      "archivo": "backend/controllers/reportes.controller.js",
+      "proposito": "CRUD de reportes disciplinarios, decisiones y respuestas de empleados",
+      "funciones_principales": {
+        "createReporte": "Admin crea reporte para empleado(s)",
+        "getReportes": "Obtiene reportes (filtrados si no es admin)",
+        "updateReporte": "Admin actualiza estado y decisión",
+        "deleteReporte": "Elimina reporte",
+        "responderReporte": "Empleado responde reporte con comentario y/o archivo"
+      },
+      "campos_reporte": {
+        "id": "int PK",
+        "empleado_id": "int FK",
+        "descripcion": "text",
+        "fecha": "timestamp",
+        "estado": "pending|resuelto",
+        "decision": "text",
+        "respuesta_empleado": "text",
+        "archivo_excusa": "varchar",
+        "fecha_respuesta": "timestamp"
+      },
+      "dependencias": [
+        "@supabase/supabase-js",
+        "multer ^2.1.1"
+      ],
+      "integraciones": "Supabase DB, File storage"
+    },
+    "routes_auth": {
+      "archivo": "backend/routes/auth.routes.js",
+      "proposito": "Define rutas de autenticación",
+      "endpoints": {
+        "POST /api/auth/login": "Autentica usuario",
+        "GET /api/auth/test": "Verifica backend activo",
+        "POST /api/auth/forgot-password": "Inicia recuperación de contraseña",
+        "POST /api/auth/reset-password": "Completa reset de contraseña"
+      },
+      "middleware": "Ninguno (public routes)"
+    },
+    "routes_empleados": {
+      "archivo": "backend/routes/empleados.routes.js",
+      "proposito": "Define todas las rutas CRUD de empleados",
+      "middleware": "verifyToken (global)",
+      "endpoints": {
+        "GET /api/empleados": "Obtiene todos los empleados",
+        "GET /api/empleados/search": "Busca empleados",
+        "GET /api/empleados/count": "Cuenta total de empleados",
+        "GET /api/empleados/cumpleaneros": "Cumpleaños del mes",
+        "GET /api/empleados/exempleados": "Ex-empleados",
+        "GET /api/empleados/certificado/:id": "Genera certificado",
+        "GET /api/empleados/:id": "Obtiene empleado específico",
+        "POST /api/empleados": "Crea nuevo empleado (multipart: foto, documentos)",
+        "PUT /api/empleados/:id": "Actualiza empleado (multipart: foto)",
+        "DELETE /api/empleados/:id": "Elimina empleado",
+        "POST /api/empleados/:id/documentos": "Sube documento",
+        "POST /api/empleados/:id/contacto-emergencia": "Crea contacto emergencia",
+        "PUT /api/empleados/:id/contacto-emergencia/:contactoId": "Actualiza contacto",
+        "DELETE /api/empleados/exempleados/:id": "Elimina ex-empleado"
+      }
+    },
+    "routes_reportes": {
+      "archivo": "backend/routes/reportes.routes.js",
+      "proposito": "Define rutas de reportes disciplinarios",
+      "middleware": "verifyToken (global), requireAdmin (rutas de creación/edición)",
+      "endpoints": {
+        "GET /api/reportes": "Obtiene reportes (usuario ve solo los suyos)",
+        "POST /api/reportes": "Crea reporte (admin only)",
+        "PUT /api/reportes/:id": "Actualiza reporte (admin only)",
+        "DELETE /api/reportes/:id": "Elimina reporte (admin only)",
+        "POST /api/reportes/:id/responder": "Empleado responde reporte (multipart: archivo)"
+      }
+    },
+    "middleware_auth": {
+      "archivo": "backend/middlewares/auth.middleware.js",
+      "proposito": "Verifica y valida JWT en todas las requests protegidas",
+      "funciones_principales": {
+        "verifyToken": "Extrae JWT del header Authorization, lo valida, agrega req.user"
+      },
+      "dependencias": ["jsonwebtoken ^9.0.3"],
+      "uso": "Aplicado globalmente a rutas de empleados y reportes"
+    },
+    "middleware_roleauth": {
+      "archivo": "backend/middlewares/roleAuth.js",
+      "proposito": "Verifica rol de usuario (admin vs empleado)",
+      "funciones_principales": {
+        "requireAdmin": "Solo permite acceso si req.user.rol === 'admin'"
+      },
+      "uso": "En rutas de POST/PUT/DELETE de reportes, crear empleados, etc."
+    },
+    "middleware_auth_vacio": {
+      "archivo": "backend/middleware/auth.js",
+      "estado": "Vacío - no se usa"
+    },
+    "model_empleado_vacio": {
+      "archivo": "backend/models/empleado.model.js",
+      "estado": "Vacío - modelo no implementado, lógica en controller"
+    }
+  },
+  "frontend": {
+    "estructura": {
+      "src": "Código fuente React",
+      "pages": "Componentes de página",
+      "services": "Lógica de negocio (VACÍOS - lógica en componentes)",
+      "utils": "Utilidades (api.js con fetchWithAuth)"
+    },
+    "app": {
+      "archivo": "formacero_rrhh_1.1/src/App.jsx",
+      "proposito": "Componente raíz con routing y protección de rutas",
+      "rutas_definidas": {
+        "/": "Login",
+        "/forgot-password": "Recuperar contraseña",
+        "/reset-password": "Restablecer contraseña",
+        "/dashboard": "Dashboard (RequireAuth)",
+        "/registrar-empleados": "Crear empleados (RequireAuth + Admin)",
+        "/nomina": "Generar desprendibles (RequireAuth + Admin)",
+        "/reportes": "Gestión de reportes (RequireAuth + Admin)",
+        "/organizacion": "Organigrama (RequireAuth)",
+        "/informacion-empleados": "Lista de empleados (RequireAuth + Admin)",
+        "/lista-exempleados": "Ex-empleados (RequireAuth + Admin)",
+        "/certificado-laboral": "Certificados (RequireAuth)",
+        "/empleado/:id": "Detalle de empleado (RequireAuth)"
+      },
+      "componentes_proteccion": [
+        "RequireAuth - Verifica token en localStorage",
+        "RequireAdmin - Verifica token y rol === 'admin'"
+      ],
+      "dependencias": [
+        "react-router-dom ^7.13.1"
+      ]
+    },
+    "main": {
+      "archivo": "formacero_rrhh_1.1/src/main.jsx",
+      "proposito": "Punto de entrada React - monta App en #root",
+      "dependencias": [
+        "react",
+        "react-dom"
+      ]
+    },
+    "utils_api": {
+      "archivo": "formacero_rrhh_1.1/src/utils/api.js",
+      "proposito": "Utilities para comunicación con backend",
+      "funciones_principales": {
+        "normalizeUrl": "Normaliza URLs removiendo slash final y agregando /api",
+        "buildApiUrl": "Construye URL base: VITE_API_URL o /api o localhost:3001",
+        "getApiEndpoint": "Retorna URL completa para un endpoint",
+        "getAuthHeaders": "Retorna headers con Authorization: Bearer token",
+        "fetchWithAuth": "Wrapper de fetch que automáticamente agrega token"
+      },
+      "comportamiento": {
+        "desarrollo": "Usa proxy vite a http://localhost:3001",
+        "produccion": "Usa /api (same-origin) o VITE_API_URL"
+      }
+    },
+    "services": {
+      "api.js": "Vacío",
+      "auth.js": "Vacío",
+      "empleados.js": "Vacío",
+      "nota": "Toda la lógica está integrada en los componentes de página"
+    },
+    "paginas": {
+      "login": {
+        "archivo": "formacero_rrhh_1.1/src/pages/login/login.jsx",
+        "proposito": "Página de autenticación",
+        "funcionalidades": [
+          "Formulario de login (correo + contraseña)",
+          "Validación básica",
+          "Llamada a POST /api/auth/login",
+          "Almacena token y user en localStorage",
+          "Redirige según rol (admin → /dashboard, user → /empleado/:id)",
+          "Link a forgot-password"
+        ],
+        "estado_local": [
+          "correo, password, error"
+        ],
+        "dependencias": [
+          "react-router-dom"
+        ]
+      },
+      "dashboard": {
+        "archivo": "formacero_rrhh_1.1/src/pages/dashboard/dashboard.jsx",
+        "proposito": "Panel principal post-login",
+        "funcionalidades": [
+          "Mostrar nombre del usuario logueado",
+          "Buscador de empleados (busca en tiempo real)",
+          "Sincronizar foto del usuario desde backend",
+          "Para admins: gestión de reportes (crear, editar, eliminar, cambiar estado)",
+          "Logout con confirmación",
+          "Stats: total de empleados, cumpleaños"
+        ],
+        "estado_local": [
+          "totalEmpleados, cumpleaneros, search, results, showDropdown",
+          "reportes, empleados, formData, editingId, editData",
+          "showLogoutConfirm"
+        ],
+        "llamadas_api": [
+          "GET /empleados/count",
+          "GET /empleados/cumpleaneros",
+          "GET /empleados/search?q=...",
+          "GET /reportes",
+          "POST /reportes",
+          "PUT /reportes/:id",
+          "DELETE /reportes/:id"
+        ]
+      },
+      "registrar_empleados": {
+        "archivo": "formacero_rrhh_1.1/src/pages/registrar-empleados/registrar-empleados.jsx",
+        "proposito": "Crear nuevos empleados",
+        "funcionalidades": [
+          "Formulario completo de empleado",
+          "Subida de foto (max 2MB)",
+          "Múltiples documentos (max 10)",
+          "Contacto de emergencia (nested form)",
+          "Preview de foto antes de subir",
+          "Búsqueda de empleados existentes",
+          "FormData multipart para foto y documentos"
+        ],
+        "campos_form": {
+          "basicos": "nombre, cedula, correo, cargo, telefono, direccion, salario",
+          "fechas": "fechaIngreso, fechaNacimiento",
+          "otros": "departamento, foto, documentos",
+          "emergencia": "nombre, relacion, telefonoPrincipal, telefonoAlternativo, direccion, ciudad"
+        },
+        "validaciones": [
+          "Foto no debe superar 2MB",
+          "Campos obligatorios: nombre, cedula, correo"
+        ],
+        "llamadas_api": [
+          "POST /empleados (multipart)"
+        ]
+      },
+      "nomina": {
+        "archivo": "formacero_rrhh_1.1/src/pages/nomina/nomina.jsx",
+        "proposito": "Generar desprendibles de nómina en PDF",
+        "funcionalidades": [
+          "Seleccionar empleado de dropdown",
+          "Buscar empleado por nombre/correo",
+          "Ingresar días trabajados",
+          "Calcular salario día (salario/30) × días",
+          "Generar desprendible de pago",
+          "Descargar como PDF (html2pdf)",
+          "Mostrar información del empleado"
+        ],
+        "llamadas_api": [
+          "GET /empleados",
+          "GET /empleados/search?q=..."
+        ],
+        "dependencias": [
+          "html2pdf.js ^0.14.0"
+        ]
+      },
+      "reportes": {
+        "archivo": "formacero_rrhh_1.1/src/pages/reportes/reportes.jsx",
+        "proposito": "Gestión de reportes disciplinarios",
+        "funcionalidades": [
+          "Vista de tabs: Formulario de creación | Listado de reportes",
+          "Crear reporte para 1 empleado o TODOS",
+          "Listar reportes con estado (pendiente/resuelto)",
+          "Editar reportes (estado, decisión)",
+          "Eliminar reportes",
+          "Buscar empleados",
+          "Modales de confirmación y éxito"
+        ],
+        "campos_reporte": [
+          "empleado_id, descripcion, fecha, estado, decision"
+        ],
+        "llamadas_api": [
+          "GET /reportes",
+          "POST /reportes",
+          "PUT /reportes/:id",
+          "DELETE /reportes/:id",
+          "GET /empleados",
+          "GET /empleados/search?q=..."
+        ]
+      },
+      "empleado_detalle": {
+        "archivo": "formacero_rrhh_1.1/src/pages/empleado-detalle/empleado-detalle.jsx",
+        "proposito": "Vista completa de empleado con todas sus opciones",
+        "funcionalidades": [
+          "Info básica (nombre, cargo, salario, etc.)",
+          "Editar perfil (si es admin o dueño del perfil)",
+          "Cambiar foto de perfil",
+          "Sección de documentos: subir, editar, eliminar",
+          "Contactos de emergencia: crear, editar, eliminar",
+          "Reportes asignados (ver, responder con archivo)",
+          "Certificado laboral",
+          "Permisos granulares por rol y propiedad"
+        ],
+        "permisos": {
+          "canEditProfile": "admin || isOwnProfile",
+          "canEditDocuments": "admin || isOwnProfile",
+          "canViewReports": "isOwnProfile && rol=empleado"
+        },
+        "tabs_seccion": [
+          "info - Información básica",
+          "documentos - Gestión de documentos",
+          "contactos - Contactos de emergencia",
+          "reportes - Reportes del empleado"
+        ],
+        "llamadas_api": [
+          "GET /empleados/:id",
+          "PUT /empleados/:id",
+          "POST /empleados/:id/documentos",
+          "PUT /empleados/:id/documentos/:docId",
+          "DELETE /empleados/:id/documentos/:docId",
+          "POST /empleados/:id/contacto-emergencia",
+          "PUT /empleados/:id/contacto-emergencia/:contactoId",
+          "DELETE /empleados/:id/contacto-emergencia/:contactoId",
+          "GET /reportes",
+          "POST /reportes/:id/responder (multipart)"
+        ]
+      },
+      "certificado_laboral": {
+        "archivo": "formacero_rrhh_1.1/src/pages/certificado-laboral/certificado-laboral.jsx",
+        "proposito": "Generar y descargar certificados laborales",
+        "funcionalidades": [
+          "Seleccionar empleado (dropdown para admin, auto para empleado)",
+          "Buscar empleados",
+          "Generar certificado con datos del empleado",
+          "Mostrar certificado en pantalla",
+          "Copiar al portapapeles",
+          "Descargar como archivo .txt",
+          "Formatos de fecha españolizados"
+        ],
+        "formato_certificado": "Texto con firma digital simulada",
+        "llamadas_api": [
+          "GET /empleados/:id",
+          "GET /empleados",
+          "GET /empleados/search?q=..."
+        ]
+      },
+      "organizacion": {
+        "archivo": "formacero_rrhh_1.1/src/pages/organizacion/organizacion.jsx",
+        "proposito": "Mostrar organigrama (pirámide) de la empresa",
+        "funcionalidades": [
+          "Lista de empleados en formato de tarjetas",
+          "Mostrar nombre, cargo, departamento, foto",
+          "Búsqueda por nombre, cargo o departamento",
+          "Clic en tarjeta navega a /empleado/:id",
+          "Estilos visuales por nivel jerárquico (CSS classes)"
+        ],
+        "llamadas_api": [
+          "GET /empleados"
+        ]
+      },
+      "informacion_empleados": {
+        "archivo": "formacero_rrhh_1.1/src/pages/informacion-empleados/informacion-empleados.jsx",
+        "proposito": "Tabla administrativa de empleados activos",
+        "funcionalidades": [
+          "Tabla expandible de empleados",
+          "Búsqueda por nombre, cargo, departamento",
+          "Ver documentos de cada empleado",
+          "Eliminar empleado (lo convierte en ex-empleado)",
+          "Formulario de razón de despido modal",
+          "Modales de confirmación y éxito"
+        ],
+        "llamadas_api": [
+          "GET /empleados",
+          "GET /empleados/:id",
+          "DELETE /empleados/:id (con motivo)"
+        ]
+      },
+      "lista_exempleados": {
+        "archivo": "formacero_rrhh_1.1/src/pages/lista-exempleados/lista-exempleados.jsx",
+        "proposito": "Tabla de empleados retirados/despedidos",
+        "funcionalidades": [
+          "Tabla de ex-empleados con datos",
+          "Expandir para ver razón de despido",
+          "Búsqueda por nombre, cargo, departamento, motivo",
+          "Eliminar ex-empleado definitivamente",
+          "Modales de confirmación y éxito"
+        ],
+        "llamadas_api": [
+          "GET /empleados/exempleados",
+          "DELETE /empleados/exempleados/:id"
+        ]
+      },
+      "forgot_password": {
+        "archivo": "formacero_rrhh_1.1/src/pages/forgot-password/forgot-password.jsx",
+        "proposito": "Solicitar recuperación de contraseña",
+        "funcionalidades": [
+          "Formulario con email",
+          "Envía POST a /auth/forgot-password",
+          "Muestra mensaje de éxito o error",
+          "Link de regreso a login"
+        ],
+        "llamadas_api": [
+          "POST /auth/forgot-password"
+        ]
+      },
+      "reset_password": {
+        "archivo": "formacero_rrhh_1.1/src/pages/reset-password/reset-password.jsx",
+        "proposito": "Resetear contraseña con token",
+        "funcionalidades": [
+          "Obtiene token de URL params",
+          "Formulario de nueva contraseña",
+          "Envía POST a /auth/reset-password",
+          "Redirige a login si éxito"
+        ],
+        "llamadas_api": [
+          "POST /auth/reset-password"
+        ]
+      }
+    },
+    "configuracion": {
+      "vite_config": {
+        "archivo": "formacero_rrhh_1.1/vite.config.js",
+        "proposito": "Configuración de Vite",
+        "caracteristicas": [
+          "Plugin React habilitado",
+          "Proxy /api a http://localhost:3001 (desarrollo)",
+          "Build con terser minification",
+          "Sourcemaps en producción",
+          "Code splitting: vendor bundle separado"
+        ]
+      },
+      "package_json_frontend": {
+        "archivo": "formacero_rrhh_1.1/package.json",
+        "scripts": {
+          "dev": "vite",
+          "build": "vite build",
+          "lint": "eslint .",
+          "preview": "vite preview"
+        },
+        "dependencias": {
+          "react": "^19.2.0",
+          "react-dom": "^19.2.0",
+          "react-router-dom": "^7.13.1",
+          "html2pdf.js": "^0.14.0",
+          "vite": "^7.3.1",
+          "@vitejs/plugin-react": "^5.1.1"
+        }
+      }
+    }
+  },
+  "configuracion_global": {
+    "package_json_raiz": {
+      "archivo": "/package.json",
+      "proposito": "Scripts principales y dependencias compartidas",
+      "scripts": {
+        "dev": "Ejecuta dev.js",
+        "dev:backend": "cd backend && node server.js",
+        "dev:frontend": "cd formacero_rrhh_1.1 && npm run dev"
+      },
+      "dependencias": {
+        "concurrently": "^9.2.1",
+        "cors": "^2.8.6",
+        "dotenv": "^17.4.0",
+        "express": "^5.2.1",
+        "nodemailer": "^8.0.7",
+        "pdf-parse": "^2.4.5"
+      }
+    },
+    "package_json_backend": {
+      "archivo": "backend/package.json",
+      "scripts": {
+        "start": "node server.js",
+        "dev": "node server.js"
+      },
+      "dependencias": {
+        "@supabase/supabase-js": "^2.104.0",
+        "bcrypt": "^6.0.0",
+        "cors": "^2.8.6",
+        "dotenv": "^17.4.0",
+        "express": "^5.2.1",
+        "jsonwebtoken": "^9.0.3",
+        "multer": "^2.1.1",
+        "mysql2": "^3.20.0",
+        "nodemailer": "^7.0.10"
+      }
+    },
+    "vercel_json": {
+      "archivo": "vercel.json",
+      "proposito": "Configuración de deploy en Vercel",
+      "buildCommand": "cd formacero_rrhh_1.1 && npm install && npm run build",
+      "outputDirectory": "formacero_rrhh_1.1/dist",
+      "installCommand": "npm install && cd backend && npm install && cd ../formacero_rrhh_1.1 && npm install",
+      "rewrites": [
+        "{ /api/(.*) → /api }",
+        "{ /(.*) → / }"
+      ],
+      "functions": {
+        "memory": 1024,
+        "maxDuration": 60
+      }
+    },
+    "api_serverless": {
+      "archivo": "api/index.js",
+      "proposito": "Punto de entrada para Vercel Serverless Functions",
+      "caracteristicas": [
+        "Re-importa todas las rutas de backend",
+        "CORS dinámico",
+        "Compatible con Vercel"
+      ]
+    }
+  },
+  "base_datos": {
+    "tipo": "Supabase (PostgreSQL)",
+    "tablas": {
+      "usuarios": {
+        "campos": [
+          "id (PK)",
+          "nombre varchar(100)",
+          "correo varchar(100)",
+          "password varchar(100) - bcrypt hash",
+          "rol varchar(50)",
+          "empleado_id (FK opcional)",
+          "foto_url varchar(255)"
+        ],
+        "proposito": "Cuentas de usuario y autenticación"
+      },
+      "empleados": {
+        "campos": [
+          "id (PK)",
+          "nombre varchar(100)",
+          "documento varchar(50) - cédula",
+          "correo varchar(100)",
+          "telefono varchar(20)",
+          "cargo varchar(100)",
+          "salario decimal(10,2)",
+          "fecha_ingreso date",
+          "fecha_nacimiento date",
+          "departamento_id (FK)",
+          "direccion text",
+          "estado varchar(20) - activo/inactivo",
+          "foto_url varchar(255) - Supabase Storage URL",
+          "fecha_creacion timestamp"
+        ],
+        "proposito": "Información de empleados activos",
+        "indices": "correo, documento, estado"
+      },
+      "departamentos": {
+        "campos": [
+          "id (PK)",
+          "nombre varchar(100)"
+        ],
+        "proposito": "Departamentos de la empresa",
+        "creacion_dinamica": "Se crean automáticamente en createEmpleado si no existen"
+      },
+      "documentos_empleado": {
+        "campos": [
+          "id (PK)",
+          "empleado_id (FK)",
+          "nombre_original varchar(255)",
+          "tipo varchar(100) - MIME type",
+          "url text - Supabase Storage URL",
+          "fecha_subida timestamp"
+        ],
+        "proposito": "Documentos adjuntos de empleados"
+      },
+      "contactos_emergencia": {
+        "campos": [
+          "id (PK)",
+          "empleado_id (FK)",
+          "nombre varchar(100)",
+          "relacion varchar(100)",
+          "telefono_principal varchar(20)",
+          "telefono_alternativo varchar(20)",
+          "direccion text",
+          "ciudad varchar(100)"
+        ],
+        "proposito": "Contactos de emergencia de empleados",
+        "nota": "Tabla con RLS (Row Level Security) en Supabase"
+      },
+      "exempleados": {
+        "campos": [
+          "id (PK)",
+          "nombre varchar(100)",
+          "correo varchar(100)",
+          "cargo varchar(100)",
+          "departamento varchar(100)",
+          "telefono varchar(20)",
+          "fecha_ingreso date",
+          "fecha_salida date",
+          "razon_despido text"
+        ],
+        "proposito": "Empleados retirados o despedidos"
+      },
+      "reportes": {
+        "campos": [
+          "id (PK)",
+          "empleado_id (FK)",
+          "descripcion text - motivo del reporte",
+          "fecha timestamp - fecha creación",
+          "estado varchar(20) - pendiente/resuelto",
+          "decision text - decisión de admin",
+          "respuesta_empleado text - respuesta del empleado",
+          "archivo_excusa varchar(255) - nombre archivo",
+          "fecha_respuesta timestamp"
+        ],
+        "proposito": "Reportes disciplinarios"
+      },
+      "organizacion": {
+        "campos": [
+          "id (PK)",
+          "empleado_id (FK)",
+          "jefe_id (FK)",
+          "rol varchar(100)"
+        ],
+        "proposito": "Estructura jerárquica (no completamente utilizada)"
+      }
+    },
+    "storage_buckets": {
+      "empleados": {
+        "proposito": "Bucket para fotos y documentos",
+        "carpetas": [
+          "fotos/:empleado_id/* - Fotos de perfil",
+          "documentos/:empleado_id/* - Documentos"
+        ],
+        "acceso": "Public URLs para lectura"
+      }
+    }
+  },
+  "flujos_principales": {
+    "login": {
+      "usuario_ingresa_credenciales": "Login.jsx",
+      "frontend_envia_post": "POST /api/auth/login { correo, password }",
+      "backend_valida": "auth.controller.js → busca usuario → bcrypt.compare()",
+      "retorna_response": "{ token JWT, user object }",
+      "frontend_almacena": "localStorage: token, user",
+      "redirige_segun_rol": "admin → /dashboard, empleado → /empleado/:id"
+    },
+    "crear_empleado": {
+      "admin_completa_formulario": "RegistrarEmpleados.jsx",
+      "sube_archivos": "FormData con foto (max 2MB) y documentos (max 50MB cada)",
+      "frontend_envia_post": "POST /api/empleados (multipart/form-data)",
+      "backend_procesa": "createEmpleado controller",
+      "sube_a_supabase": "Storage bucket 'empleados' + DB tablas",
+      "retorna_id": "ID del empleado creado",
+      "frontend_confirma": "Mensaje de éxito y limpiar formulario"
+    },
+    "crear_reporte": {
+      "admin_selecciona_empleado": "Reportes.jsx o Dashboard.jsx",
+      "ingresa_descripcion": "Qué motivó el reporte",
+      "puede_enviar_a_todos": "Opción 'todos' crea reporte para cada empleado",
+      "frontend_envia_post": "POST /api/reportes { empleado_id, descripcion, fecha }",
+      "backend_crea": "createReporte controller",
+      "retorna_confirmacion": "{ message }",
+      "empleado_ve_en_panel": "EmpleadoDetalle.jsx muestra reportes asignados"
+    },
+    "responder_reporte": {
+      "empleado_ve_reportes": "EmpleadoDetalle.jsx tab 'reportes'",
+      "ingresa_respuesta": "Texto y opcionalmente archivo (excusa, documento)",
+      "frontend_envia_post": "POST /api/reportes/:id/responder (multipart: archivo_excusa)",
+      "backend_actualiza": "responderReporte controller",
+      "almacena_archivo": "File storage en backend/uploads o /tmp",
+      "actualiza_reporte": "respuesta_empleado, archivo_excusa, fecha_respuesta"
+    },
+    "buscar_empleado": {
+      "usuario_escribe_en_buscador": "En cualquier página",
+      "frontend_envia_get": "GET /api/empleados/search?q=término",
+      "backend_busca": "searchEmpleado controller",
+      "busca_en_campos": "nombre, correo, documento, cargo, departamento",
+      "retorna_resultados": "Array de empleados coincidentes",
+      "frontend_muestra_dropdown": "Lista clickeable de resultados"
+    }
+  },
+  "variables_entorno": {
+    "supabase": {
+      "SUPABASE_URL": "URL de la instancia Supabase",
+      "SUPABASE_ANON_KEY": "Clave pública (lectura limitada)",
+      "SUPABASE_SERVICE_ROLE_KEY": "Clave privada (admin, solo backend)"
+    },
+    "autenticacion": {
+      "JWT_SECRET": "Clave para firmar/verificar tokens JWT",
+      "NODE_ENV": "development|production"
+    },
+    "email": {
+      "EMAIL_USER": "usuario@gmail.com para SMTP",
+      "EMAIL_PASS": "App password de Gmail (no contraseña normal)",
+      "EMAIL_FROM": "Email que aparece como remitente",
+      "EMAIL_HOST": "smtp.gmail.com",
+      "EMAIL_PORT": "465 (SSL) o 587 (STARTTLS)"
+    },
+    "urls": {
+      "FRONTEND_URL": "URL del frontend en producción (ej: https://tu-app.vercel.app)",
+      "VITE_API_URL": "URL de API para frontend (ej: https://tu-app.vercel.app/api)"
+    }
+  },
+  "archivos_documentacion": {
+    "DEPLOY_VERCEL.md": "Guía paso a paso para deploy en Vercel",
+    "CAMBIOS_VERCEL.md": "Resumen de cambios técnicos realizados",
+    "REFERENCIA_RAPIDA.md": "Comandos rápidos y URLs de producción",
+    "CHECKLIST_DEPLOY.md": "Verificaciones antes de deploy",
+    "README.md": "Documentación general",
+    "INDICE.md": "Índice de documentación"
+  },
+  "estadisticas_codebase": {
+    "backend_archivos": 14,
+    "frontend_componentes": 12,
+    "endpoints_api": 25,
+    "tablas_base_datos": 8,
+    "lineas_codigo_aprox": 5000
+  },
+  "tecnologias_utilizadas": {
+    "frontend": [
+      "React 19.2.0",
+      "React Router DOM 7.13.1",
+      "Vite 7.3.1",
+      "html2pdf.js (generación de PDFs)"
+    ],
+    "backend": [
+      "Node.js",
+      "Express 5.2.1",
+      "Supabase (@supabase/supabase-js 2.104.0)",
+      "JWT (jsonwebtoken 9.0.3)",
+      "bcrypt 6.0.0",
+      "Multer 2.1.1 (upload de archivos)",
+      "Nodemailer 7.0.10",
+      "CORS 2.8.6"
+    ],
+    "base_datos": [
+      "PostgreSQL (a través de Supabase)",
+      "Supabase Storage (para archivos)"
+    ],
+    "deployment": [
+      "Vercel (Frontend + API Serverless)",
+      "Supabase (Base de datos y Storage)"
+    ]
+  },
+  "flujos_autenticacion": {
+    "login_normal": {
+      "paso_1": "Usuario entra a / (Login.jsx)",
+      "paso_2": "Completa correo + contraseña",
+      "paso_3": "Frontend POST /api/auth/login",
+      "paso_4": "Backend busca usuario en tabla 'usuarios'",
+      "paso_5": "Valida bcrypt.compare(password, user.password)",
+      "paso_6": "Genera JWT con { id, rol, empleado_id }",
+      "paso_7": "Retorna token + user object",
+      "paso_8": "Frontend almacena en localStorage",
+      "paso_9": "Redirige según rol"
+    },
+    "recuperacion_contraseña": {
+      "paso_1": "Usuario en /forgot-password",
+      "paso_2": "Ingresa correo",
+      "paso_3": "Frontend POST /api/auth/forgot-password",
+      "paso_4": "Backend genera token reset aleatorio",
+      "paso_5": "Envía email con link reset",
+      "paso_6": "Usuario recibe email y hace clic",
+      "paso_7": "Va a /reset-password?token=...",
+      "paso_8": "Ingresa nueva contraseña",
+      "paso_9": "Frontend POST /api/auth/reset-password { token, nuevaPassword }",
+      "paso_10": "Backend valida token y actualiza password",
+      "paso_11": "Usuario puede hacer login con nueva contraseña"
+    },
+    "proteccion_rutas": {
+      "requireAuth": "Verifica localStorage.token antes de renderizar",
+      "requireAdmin": "Verifica token AND user.rol === 'admin'",
+      "backend": "verifyToken middleware valida JWT en header Authorization"
+    }
+  },
+  "caracteristicas_principales": {
+    "gestion_empleados": {
+      "crear": "Nombre, cédula, correo, cargo, salario, fechas, foto, documentos",
+      "leer": "Listar, buscar, ver detalle individual",
+      "actualizar": "Foto, datos básicos, contacto emergencia",
+      "eliminar": "Marcar como inactivo (mueve a ex-empleados)"
+    },
+    "gestion_reportes": {
+      "crear": "Admin crea reporte disciplinario para empleado(s)",
+      "responder": "Empleado responde con comentario y archivo",
+      "decidir": "Admin registra decision/resultado",
+      "estados": "pendiente, resuelto"
+    },
+    "nómina": {
+      "desprendibles": "Calcula salario por días trabajados",
+      "pdf": "Genera PDF descargarle",
+      "busqueda": "Busca empleados rápidamente"
+    },
+    "certificados": {
+      "generacion": "Certificado laboral con formato legal",
+      "datos": "Nombre, cargo, fecha ingreso, salario",
+      "descarga": "Como texto (.txt)"
+    },
+    "organizacion": {
+      "organigrama": "Visual de estructura de empleados",
+      "filtrado": "Por nombre, cargo, departamento"
+    }
+  },
+  "notas_tecnicas": {
+    "adaptador_db": "El archivo db.js es un adaptador que traduce SQL MySQL a Supabase - actualmente en transición",
+    "servicios_vacios": "Los archivos en services/ están vacíos - toda la lógica está integrada en componentes de página",
+    "modelos_vacios": "No hay models implementados - lógica directamente en controllers",
+    "autenticacion": "JWT con 8 horas de expiración",
+    "upload_archivos": "Usa Supabase Storage para empleados + multer para reportes",
+    "cors": "Dinámico permite localhost, GitHub, Vercel y FRONTEND_URL",
+    "email": "Requiere Gmail y App Password (no contraseña normal)",
+    "produccion": "Usa /tmp para uploads en Vercel (no persiste entre deployments)"
+  },
+  "proximos_pasos_sugeridos": [
+    "Implementar modelo Empleado en backend/models/",
+    "Mover lógica de componentes a service layer",
+    "Implementar tests unitarios y e2e",
+    "Agregar validación más robusta en backend",
+    "Implementar paginación en listas grandes",
+    "Agregar caché de datos (localStorage, React Query)",
+    "Mejorar manejo de errores global",
+    "Agregar logging centralizado",
+    "Implementar auditoría de cambios",
+    "Documentar API con Swagger/OpenAPI"
+  ]
+}
