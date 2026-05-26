@@ -391,11 +391,12 @@ function Dashboard() {
 
       {/* CONTENIDO */}
       <main className="dashboard-content">
-
+      {/* 
         <div className="card">
           <h3>Total Empleados</h3>
           <p>{totalEmpleados}</p>
         </div>
+      */}
       {/*
         <div className="card">
           <h3>Nuevas Contrataciones</h3>
