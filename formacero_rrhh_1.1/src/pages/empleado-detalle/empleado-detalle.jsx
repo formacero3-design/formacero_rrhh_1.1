@@ -533,7 +533,6 @@ function EmpleadoDetalle() {
                 <p><strong>Correo:</strong> {isOwnProfile ? empleado.correo : maskEmail(empleado.correo)}</p>
                 <p><strong>Teléfono:</strong> {isOwnProfile ? (empleado.telefono || "-") : maskPhone(empleado.telefono)}</p>
                 <p><strong>Ingreso:</strong> {getIngresoLabel(empleado.fecha_ingreso)}</p>
-                <p><strong>Ciudad:</strong> {empleado.ciudad || "-"}</p>
 
                 {isOwnProfile && (
                   <>

@@ -338,7 +338,7 @@ function Dashboard() {
             <Link to="/organizacion" className="menu-btn">Organización</Link>
             <Link to="/informacion-empleados" className="menu-btn">Empleados</Link>
             <Link to="/lista-exempleados" className="menu-btn">Lista Exempleados</Link>
-            <Link to="/nomina" className="menu-btn">Nómina</Link>
+           {/* <Link to="/nomina" className="menu-btn">Nómina</Link>*/}
             <Link to="/registrar-empleados" className="menu-btn">Registro de Empleados</Link>
             <Link to="/certificado-laboral" className="menu-btn">Certificado Laboral</Link>
             <Link to="/reportes" className="menu-btn">Reportes</Link>
@@ -396,16 +396,16 @@ function Dashboard() {
           <h3>Total Empleados</h3>
           <p>{totalEmpleados}</p>
         </div>
-
+      {/*
         <div className="card">
           <h3>Nuevas Contrataciones</h3>
           <p>8</p>
-        </div>
-
+        </div>*/}
+      {/* 
         <div className="card">
           <h3>Cumpleaños del Mes</h3>
           <p>{cumpleaneros.length}</p>
-
+      
           <div style={{ fontSize: "0.85rem", marginTop: "5px" }}>
             {cumpleaneros.length === 0 ? (
               <p>No hay cumpleaños</p>
@@ -424,7 +424,7 @@ function Dashboard() {
             )}
           </div>
         </div>
-
+      */}
         <Link
           to={user?.rol === "admin" ? "/reportes?tab=reportes" : `/empleado/${user?.empleado_id || user?.id}?tab=reportes`}
           className="card alert card-link"
